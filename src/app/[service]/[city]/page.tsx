@@ -32,7 +32,7 @@ export default function Page({ params }: { params: Params }) {
 
   return (
     <CityLanding
-      service={service}
+  service={s as any}
       city={city}
       titleH1={copy.titleH1}
       subH1={copy.subH1}
