@@ -8,7 +8,10 @@ import { notFound } from "next/navigation";
 type Params = { service: string; city: string };
 type ServiceKey = keyof typeof mascotsByService;
 
-export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+// ===== SEO Metadata =====
+export async function generateMetadata(
+  { params }: { params: Params }
+): Promise<Metadata> {
   const s = params.service as keyof typeof cityCopy;
   const c = params.city;
   const copy = cityCopy[s]?.[c];
@@ -16,36 +19,29 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title: copy ? copy.titleH1 : `${params.service} ${c} – SOS24ORE`,
     description: copy ? copy.subH1 : `Trova ${params.service} a ${c} H24.`,
+    alternates: {
+      canonical: `https://www.sos24ore.it/${params.service}/${c}`,
+    },
   };
 }
 
+// ===== Pagina principale =====
 export default function Page({ params }: { params: Params }) {
   const { service, city } = params;
   const s = service as ServiceKey;
+
   const mascot = mascotsByService[s];
   const copy = cityCopy[s]?.[city];
-  if (!mascot || !copy) return notFound();
 
-  // Quartieri (stub): quando pronto, caricali da Supabase
-  const quarters = [
-    { slug: "centro", label: "Centro" },
-    { slug: "prati", label: "Prati" },
-    { slug: "eur", label: "EUR" },
-  ];
+  // Se il servizio o la città non sono configurati → 404
+  if (!mascot || !copy) return notFound();
 
   return (
     <CityLanding
       service={s}
-      city={city}
-      titleH1={copy.titleH1}
-      subH1={copy.subH1}
-      numeroVerde="800 00 24 24"
-      heroMascotte={mascot}
-      heroLogo="/logos/logo.webp"
-      lead={copy.lead}
-      pills={copy.pills}
-      faqs={copy.faqs}
-      quarters={quarters}
+      heroTitle={copy.titleH1}
+      heroSubtitle={copy.subH1}
+      mascotSrc={mascot}
     />
   );
 }

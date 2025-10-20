@@ -1,12 +1,14 @@
 // src/app/api/public/macro-aree/route.ts
 import { NextResponse } from "next/server";
 import { supabaseAnon } from "@/lib/supabase/client";
+
 export const dynamic = "force-dynamic";
 
 type MacroRow = { id: string; slug: string; title: string; description: string | null };
+type AreaRow = { slug: string; label: string; macro_area_id: string; macro_slug: string };
+
 const CITY = "roma" as const;
 
-// DB -> UI
 const DB_TO_PUBLIC: Record<string, { pub: string; title: string }> = {
   "roma-centro": { pub: "centro-prati", title: "Roma Centro" },
   "roma-nord":   { pub: "nord",         title: "Roma Nord" },
@@ -14,7 +16,6 @@ const DB_TO_PUBLIC: Record<string, { pub: string; title: string }> = {
   "roma-sud":    { pub: "sud",          title: "Roma Sud" },
   "roma-ovest":  { pub: "ovest",        title: "Roma Ovest" },
   "litorale":    { pub: "litorale",     title: "Litorale Romano" },
-  "litorale-romano": { pub: "litorale", title: "Litorale Romano" },
 };
 
 const PUBLIC_ORDER = ["centro-prati", "nord", "est", "sud", "ovest", "litorale"];
@@ -22,24 +23,24 @@ const PUBLIC_ORDER = ["centro-prati", "nord", "est", "sud", "ovest", "litorale"]
 export async function GET() {
   const supa = supabaseAnon();
 
-  // 1) Macro aree di Roma
   const { data: macros, error: e1 } = await supa
     .from("macro_areas")
     .select("id,slug,title,description")
     .eq("city", CITY);
-  if (e1 || !macros) return NextResponse.json([], { status: 200 });
+  if (e1) return NextResponse.json({ error: e1.message }, { status: 500 });
+  if (!macros) return NextResponse.json([], { status: 200 });
 
-  // 2) Tutte le aree di Roma (per conteggi e popular)
   const { data: areas, error: e2 } = await supa
     .from("areas")
     .select("slug,label,macro_area_id,macro_slug")
     .eq("city", CITY);
-  if (e2 || !areas) return NextResponse.json([], { status: 200 });
+  if (e2) return NextResponse.json({ error: e2.message }, { status: 500 });
+  if (!areas) return NextResponse.json([], { status: 200 });
 
-  // 3) Raggruppo per macro
   const itemsByMacroId: Record<string, { area_slug: string; label: string }[]> = {};
   const countByMacroSlug: Record<string, number> = {};
-  for (const a of areas) {
+
+  for (const a of areas as AreaRow[]) {
     if (a.macro_area_id) {
       (itemsByMacroId[a.macro_area_id] ??= []).push({ area_slug: a.slug, label: a.label });
     }
@@ -48,8 +49,14 @@ export async function GET() {
     }
   }
 
-  // 4) MERGE per slug pubblico (deduplica litorale/litorale-romano)
-  type Out = { slug: string; title: string; description: string | null; areas_count: number; popular: { area_slug: string; label: string }[] };
+  type Out = {
+    slug: string;
+    title: string;
+    description: string | null;
+    areas_count: number;
+    popular: { area_slug: string; label: string }[];
+  };
+
   const agg: Record<string, Out> = {};
 
   for (const m of macros as MacroRow[]) {
@@ -68,7 +75,6 @@ export async function GET() {
         popular: items.slice(0, 10),
       };
     } else {
-      // unisco: prendo il count più alto; unisco i popular eliminando duplicati
       agg[map.pub].areas_count = Math.max(agg[map.pub].areas_count, count);
       const merged = [...agg[map.pub].popular, ...items];
       const seen = new Set<string>();
@@ -77,12 +83,11 @@ export async function GET() {
         seen.add(x.area_slug);
         return true;
       }).slice(0, 10);
-      // preferisco una descrizione non-null se manca
-      if (!agg[map.pub].description && m.description) agg[map.pub].description = m.description;
+      if (!agg[map.pub].description && m.description)
+        agg[map.pub].description = m.description;
     }
   }
 
-  // 5) Ordino per ordine pubblico atteso
   const out = PUBLIC_ORDER
     .filter(slug => !!agg[slug])
     .map(slug => agg[slug]);

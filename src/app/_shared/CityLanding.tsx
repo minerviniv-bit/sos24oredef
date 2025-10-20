@@ -5,7 +5,9 @@ import { headers } from "next/headers";
 import type { ServiceKey } from "@/app/_shared/serviceCityConfig";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 600; // 10 minuti di cache ISR
 
+// ==== Tipi ====
 type Macro = {
   slug: string;
   title: string;
@@ -14,6 +16,7 @@ type Macro = {
   popular: { area_slug: string; label: string }[];
 };
 
+// ==== Helper base URL ====
 function runtimeBaseUrl(): string {
   const h = headers();
   const host = h.get("host") || "localhost:3002";
@@ -21,14 +24,21 @@ function runtimeBaseUrl(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? `${proto}://${host}`;
 }
 
+// ==== Fetch macro-aree ====
 async function getMacro(): Promise<Macro[]> {
   const base = runtimeBaseUrl();
-  const res = await fetch(`${base}/api/public/macro-aree`, { next: { revalidate: 600 } });
+  const res = await fetch(`${base}/api/public/macro-aree`, {
+    next: { revalidate: 600 },
+  });
   if (!res.ok) return [];
-  return res.json();
+  try {
+    return (await res.json()) as Macro[];
+  } catch {
+    return [];
+  }
 }
 
-// palette colori per macro-aree
+// ==== Palette colori ====
 const macroColors: Record<
   string,
   { ring: string; chip: string; glow: string }
@@ -65,6 +75,7 @@ const macroColors: Record<
   },
 };
 
+// ==== COMPONENTE ====
 export default async function CityLanding({
   service,
   heroTitle,
@@ -84,7 +95,7 @@ export default async function CityLanding({
 
   return (
     <main className="bg-app-premium">
-      {/* HERO */}
+      {/* ==== HERO ==== */}
       <section className="mx-auto max-w-6xl px-4 pt-10 pb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div>
@@ -125,7 +136,7 @@ export default async function CityLanding({
         </div>
       </section>
 
-      {/* CARDS macro-aree */}
+      {/* ==== MACRO-AREE ==== */}
       <section className="mx-auto max-w-6xl px-4 pb-16">
         {macros.length === 0 ? (
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 text-neutral-300">
@@ -200,6 +211,7 @@ export default async function CityLanding({
   );
 }
 
+// ==== SUBCOMPONENT: MacroAreasList ====
 async function MacroAreasList({
   service,
   macroSlug,
@@ -211,15 +223,18 @@ async function MacroAreasList({
   const res = await fetch(`${base}/api/public/areas?macro=${macroSlug}`, {
     next: { revalidate: 600 },
   });
-  const areas: { area_slug: string; label: string }[] = res.ok
-    ? await res.json()
+
+  const areas = res.ok
+    ? ((await res.json()) as { area_slug: string; label: string }[])
     : [];
-  if (!areas.length)
+
+  if (!areas.length) {
     return (
       <div className="px-4 pb-4 text-sm text-neutral-400">
         Nessun quartiere trovato.
       </div>
     );
+  }
 
   return (
     <div className="px-4 pb-4">
