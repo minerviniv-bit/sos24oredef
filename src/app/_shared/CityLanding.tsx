@@ -16,9 +16,9 @@ type Macro = {
   popular: { area_slug: string; label: string }[];
 };
 
-// ==== Helper base URL ====
-function runtimeBaseUrl(): string {
-  const h = headers();
+// ==== Helper base URL (Next 15 compatibile) ====
+async function runtimeBaseUrl(): Promise<string> {
+  const h = await headers();
   const host = h.get("host") || "localhost:3002";
   const proto = process.env.NODE_ENV === "development" ? "http" : "https";
   return process.env.NEXT_PUBLIC_SITE_URL ?? `${proto}://${host}`;
@@ -26,7 +26,7 @@ function runtimeBaseUrl(): string {
 
 // ==== Fetch macro-aree ====
 async function getMacro(): Promise<Macro[]> {
-  const base = runtimeBaseUrl();
+  const base = await runtimeBaseUrl();
   const res = await fetch(`${base}/api/public/macro-aree`, {
     next: { revalidate: 600 },
   });
@@ -219,7 +219,7 @@ async function MacroAreasList({
   service: ServiceKey;
   macroSlug: string;
 }) {
-  const base = runtimeBaseUrl();
+  const base = await runtimeBaseUrl();
   const res = await fetch(`${base}/api/public/areas?macro=${macroSlug}`, {
     next: { revalidate: 600 },
   });
