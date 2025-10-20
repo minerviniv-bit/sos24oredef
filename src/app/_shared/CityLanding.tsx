@@ -2,6 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { headers } from "next/headers";
+import type { ServiceKey } from "@/app/_shared/serviceCityConfig";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ type Macro = {
   popular: { area_slug: string; label: string }[];
 };
 
-function runtimeBaseUrl() {
+function runtimeBaseUrl(): string {
   const h = headers();
   const host = h.get("host") || "localhost:3002";
   const proto = process.env.NODE_ENV === "development" ? "http" : "https";
@@ -28,13 +29,40 @@ async function getMacro(): Promise<Macro[]> {
 }
 
 // palette colori per macro-aree
-const macroColors: Record<string, { ring: string; chip: string; glow: string }> = {
-  "centro-prati": { ring: "ring-emerald-500/40", chip: "bg-emerald-600/15 border-emerald-600/30", glow: "from-emerald-500/25" },
-  nord:           { ring: "ring-sky-500/40",     chip: "bg-sky-600/15 border-sky-600/30",       glow: "from-sky-500/25" },
-  est:            { ring: "ring-violet-500/40",  chip: "bg-violet-600/15 border-violet-600/30", glow: "from-violet-500/25" },
-  sud:            { ring: "ring-rose-500/40",    chip: "bg-rose-600/15 border-rose-600/30",     glow: "from-rose-500/25" },
-  ovest:          { ring: "ring-amber-500/40",   chip: "bg-amber-600/15 border-amber-600/30",   glow: "from-amber-500/25" },
-  litorale:       { ring: "ring-cyan-500/40",    chip: "bg-cyan-600/15 border-cyan-600/30",     glow: "from-cyan-500/25" },
+const macroColors: Record<
+  string,
+  { ring: string; chip: string; glow: string }
+> = {
+  "centro-prati": {
+    ring: "ring-emerald-500/40",
+    chip: "bg-emerald-600/15 border-emerald-600/30",
+    glow: "from-emerald-500/25",
+  },
+  nord: {
+    ring: "ring-sky-500/40",
+    chip: "bg-sky-600/15 border-sky-600/30",
+    glow: "from-sky-500/25",
+  },
+  est: {
+    ring: "ring-violet-500/40",
+    chip: "bg-violet-600/15 border-violet-600/30",
+    glow: "from-violet-500/25",
+  },
+  sud: {
+    ring: "ring-rose-500/40",
+    chip: "bg-rose-600/15 border-rose-600/30",
+    glow: "from-rose-500/25",
+  },
+  ovest: {
+    ring: "ring-amber-500/40",
+    chip: "bg-amber-600/15 border-amber-600/30",
+    glow: "from-amber-500/25",
+  },
+  litorale: {
+    ring: "ring-cyan-500/40",
+    chip: "bg-cyan-600/15 border-cyan-600/30",
+    glow: "from-cyan-500/25",
+  },
 };
 
 export default async function CityLanding({
@@ -45,7 +73,7 @@ export default async function CityLanding({
   callLabel = "Chiama subito 800 00 24 24",
   chatLabel = "Chatta con noi",
 }: {
-  service: "idraulico" | "fabbro" | "elettricista" | "spurgo" | "caldaie";
+  service: ServiceKey;
   heroTitle: string;
   heroSubtitle?: string;
   mascotSrc?: string;
@@ -67,14 +95,21 @@ export default async function CityLanding({
               <p className="mt-4 text-neutral-300 max-w-xl">{heroSubtitle}</p>
             )}
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href="tel:800002424" className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-500">
+              <a
+                href="tel:800002424"
+                className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-medium hover:bg-emerald-500"
+              >
                 {callLabel}
               </a>
-              <Link href="/chat" className="px-4 py-2 rounded-xl bg-yellow-500 text-black font-medium hover:bg-yellow-400">
+              <Link
+                href="/chat"
+                className="px-4 py-2 rounded-xl bg-yellow-500 text-black font-medium hover:bg-yellow-400"
+              >
                 {chatLabel}
               </Link>
             </div>
           </div>
+
           <div className="relative">
             <div className="absolute -inset-10 bg-gradient-to-b from-emerald-500/12 via-transparent to-transparent blur-3xl" />
             <Image
@@ -94,7 +129,8 @@ export default async function CityLanding({
       <section className="mx-auto max-w-6xl px-4 pb-16">
         {macros.length === 0 ? (
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-6 text-neutral-300">
-            Nessuna macro-area trovata. Controlla l’API <code>/api/public/macro-aree</code>.
+            Nessuna macro-area trovata. Controlla l’API{" "}
+            <code>/api/public/macro-aree</code>.
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -105,15 +141,25 @@ export default async function CityLanding({
                   key={m.slug}
                   className={[
                     "premium-border relative rounded-2xl border border-neutral-800 bg-neutral-900/60 backdrop-blur",
-                    "ring-1", c.ring, "p-5",
-                    "transition-transform hover:-translate-y-0.5"
+                    "ring-1",
+                    c.ring,
+                    "p-5",
+                    "transition-transform hover:-translate-y-0.5",
                   ].join(" ")}
                 >
-                  <div className={`pointer-events-none absolute -inset-20 bg-gradient-to-b ${c.glow} via-transparent to-transparent blur-3xl opacity-30`} />
+                  <div
+                    className={`pointer-events-none absolute -inset-20 bg-gradient-to-b ${c.glow} via-transparent to-transparent blur-3xl opacity-30`}
+                  />
                   <div className="relative flex items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-semibold text-neutral-100">{m.title}</h2>
-                      {m.description && <p className="text-sm text-neutral-400 mt-1">{m.description}</p>}
+                      <h2 className="text-lg font-semibold text-neutral-100">
+                        {m.title}
+                      </h2>
+                      {m.description && (
+                        <p className="text-sm text-neutral-400 mt-1">
+                          {m.description}
+                        </p>
+                      )}
                     </div>
                     <span className="shrink-0 rounded-full px-3 py-1 text-xs border border-neutral-700 bg-neutral-950 text-neutral-300">
                       {m.areas_count} quartieri
@@ -129,7 +175,7 @@ export default async function CityLanding({
                           className={[
                             "px-3 py-1.5 rounded-full border text-sm font-medium",
                             "bg-black/30 border-white/15 hover:border-white/40",
-                            c.chip
+                            c.chip,
                           ].join(" ")}
                         >
                           {a.label.replace(/^Q\.\s*/, "")}
@@ -154,11 +200,27 @@ export default async function CityLanding({
   );
 }
 
-async function MacroAreasList({ service, macroSlug }: { service: string; macroSlug: string }) {
+async function MacroAreasList({
+  service,
+  macroSlug,
+}: {
+  service: ServiceKey;
+  macroSlug: string;
+}) {
   const base = runtimeBaseUrl();
-  const res = await fetch(`${base}/api/public/areas?macro=${macroSlug}`, { next: { revalidate: 600 } });
-  const areas: { area_slug: string; label: string }[] = res.ok ? await res.json() : [];
-  if (!areas.length) return <div className="px-4 pb-4 text-sm text-neutral-400">Nessun quartiere trovato.</div>;
+  const res = await fetch(`${base}/api/public/areas?macro=${macroSlug}`, {
+    next: { revalidate: 600 },
+  });
+  const areas: { area_slug: string; label: string }[] = res.ok
+    ? await res.json()
+    : [];
+  if (!areas.length)
+    return (
+      <div className="px-4 pb-4 text-sm text-neutral-400">
+        Nessun quartiere trovato.
+      </div>
+    );
+
   return (
     <div className="px-4 pb-4">
       <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">
