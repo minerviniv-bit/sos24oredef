@@ -80,8 +80,9 @@ export function buildQuartiereHandlers(service: string) {
     const seoBottomHtml = ensureSeoReady(seo?.body_html || "", NUMERO_VERDE);
     const faqs = Array.isArray(seo?.faqs) ? seo.faqs : [];
 
-    // mascotte calcolata lato server
-    const mascotSrc = mascotsByService[service] ?? "/mascotte/capitan-sos.webp";
+    /// mascotte calcolata lato server
+const s = service as ServiceKey;
+const mascotSrc = mascotsByService[s] ?? "/mascotte/capitansos-mappa.webp";
 
     return (
       <>
