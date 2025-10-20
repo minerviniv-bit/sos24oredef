@@ -30,12 +30,16 @@ export function createClientSSR() {
 
 /**
  * Client server-side con service role (per API admin).
- * ⚠️ Mai esportare sul client! Usalo solo nelle API o job lato server.
+ * ⚠️ Usalo solo nelle API o job lato server.
  */
 export function supabaseService() {
   return createClient(
-    process.env.SUPABASE_URL!,              // URL "server"
-    process.env.SUPABASE_SERVICE_ROLE_KEY!, // service role key
+    // usa l’URL pubblico anche lato server
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false } }
   );
 }
+
+// Alias compatibilità per codice esistente/Turbopack
+export const supabaseAnon = supabaseService();
