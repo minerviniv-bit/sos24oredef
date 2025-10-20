@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== Sfondo premium con sfumature + noise ===== */
+.bg-app-premium {
+  background:
+    radial-gradient(1200px 600px at 20% 10%, rgba(0, 160, 120, .06), transparent 60%),
+    radial-gradient(1000px 500px at 80% 0%, rgba(120, 80, 200, .05), transparent 60%),
+    #0b0f12 url("/noise.png") repeat;
+  background-size: auto, auto, 160px 160px;
+}
+
+/* ===== Bordo premium sulle card ===== */
+.premium-border { position: relative; overflow: hidden; }
+.premium-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(
+    150% 120% at 50% -20%,
+    rgba(255,255,255,.18),
+    transparent 40%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ===== Fix select tendina ===== */
+select {
+  background-color: #0b0f20 !important; /* sfondo scuro */
+  color: #f0f0f0 !important;            /* testo chiaro */
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+select option {
+  background-color: #0b0f20 !important; /* opzioni scure */
+  color: #f0f0f0 !important;
+}
+
+/* Hover / focus */
+select:focus {
+  outline: none;
+  border-color: #3b82f6; /* blu focus */
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.5);
+}
+/* ==== Forza dark sui form controls in tutta l'area admin ==== */
+.admin-shell {
+  color-scheme: dark; /* dice al browser di renderizzare i controlli nativi in dark */
+}
+
+/* fallback in caso il browser ignori color-scheme su <select> */
+.admin-shell select {
+  background-color: #0b0f20 !important;
+  color: #f5f5f5 !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  border-radius: 8px;
+  padding: 8px 12px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.admin-shell select option,
+.admin-shell select optgroup {
+  background-color: #0b0f20 !important;
+  color: #f5f5f5 !important;
+}
+.admin-shell select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,.45);
+}
+/* Forza i menu custom a sfondo pieno */
+.custom-select-trigger {
+  background-color: #0c1220 !important;
+  color: #ededed !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+}
+
+.custom-select-menu {
+  background-color: #0c1220 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35) !important;
+}
+
+.custom-select-item {
+  background-color: #0c1220 !important;
+  color: #f5f7fa !important;
+}
+
+.custom-select-item:hover {
+  background-color: #162036 !important;
+}
+
+.custom-select-item[aria-selected="true"] {
+  background-color: #2a354d !important;
+}
+
+@layer utilities {
+  .card-glow { position: relative; }
+  .card-glow::after {
+    content: "";
+    position: absolute;
+    left: 24px; right: 24px; bottom: -26px;
+    height: 60px;
+    background: radial-gradient(60px 28px at 50% 0,
+                 rgba(255,200,80,.25), rgba(255,160,0,.12) 45%, transparent 70%);
+    filter: blur(12px);
+    opacity: .55;
+    pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .card-glow:hover::after { opacity: .8; }
+}
