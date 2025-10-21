@@ -3,7 +3,7 @@ import { supabaseService } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
+export const preferredRegion = "fra1";
 type MacroRow = { id: string; slug: string; title: string; description: string | null };
 type AreaRow = { slug: string; label: string; macro_area_id: string; macro_slug: string };
 
