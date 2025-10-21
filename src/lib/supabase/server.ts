@@ -8,57 +8,49 @@ import type { Database } from "./types";
 /** ========= SSR anon (browser/SSR) ========= */
 export async function createClientSSR(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
+  const url =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    "";
 
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value;
-        },
-        set(name: string, value: string, options?: CookieOptions) {
-          try { cookieStore.set({ name, value, ...options }); } catch {}
-        },
-        remove(name: string, options?: CookieOptions) {
-          try { cookieStore.set({ name, value: "", ...options }); } catch {}
-        },
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+
+  return createServerClient<Database>(url, anon, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
       },
-    }
-  );
+      set(name: string, value: string, options?: CookieOptions) {
+        try { cookieStore.set({ name, value, ...options }); } catch {}
+      },
+      remove(name: string, options?: CookieOptions) {
+        try { cookieStore.set({ name, value: "", ...options }); } catch {}
+      },
+    },
+  });
 }
 
-/** ========= Service client (API/backend) con fallback ========= */
-let _svc: SupabaseClient<Database> | null = null;
-
+/** ========= Service client (API/backend) — NO fallback ========= */
 export function supabaseService(): SupabaseClient<Database> {
-  if (_svc) return _svc;
-
   const url =
     process.env.SUPABASE_URL ||
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     "";
 
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||        // preferito
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""; // fallback read-only
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-  if (!url || !key) {
-    // Log utile in prod se mancano ENV
-    console.error("[supabaseService] MISSING ENV", {
-      has_url: Boolean(url),
-      has_service_key: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
-      has_public_url: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
-      has_public_anon: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
-    });
+  if (!url || !serviceKey) {
+    // fallisci rumorosamente: così lo vedi nei log del deployment
+    throw new Error(
+      `[supabaseService] Missing ENV — url:${Boolean(url)} serviceKey:${Boolean(serviceKey)}`
+    );
   }
 
-  // NIENTE any e niente override del fetch: usa quello globale
-  _svc = createClient<Database>(url, key, {
+  return createClient<Database>(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    // su Vercel/Node 18 è opzionale, ma safer
+    global: { fetch: fetch.bind(globalThis) },
   });
-
-  return _svc;
 }
 
 /** Alias legacy */
