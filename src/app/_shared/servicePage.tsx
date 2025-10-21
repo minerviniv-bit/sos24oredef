@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 
 export function ServiceHeroV1({
@@ -91,3 +91,4 @@ export function ServiceScaffoldMinimal(props: {
 }) {
   return <ServiceHeroV1 {...props} />;
 }
+

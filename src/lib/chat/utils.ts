@@ -203,3 +203,4 @@ export function detectPublicSafetyEmergency(raw: string): EmergencyType | null {
 
   return null;
 }
+

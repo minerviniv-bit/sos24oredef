@@ -11,3 +11,4 @@ export async function GET(req: Request) {
   revalidatePath(path);
   return NextResponse.json({ revalidated: true, path, now: Date.now() });
 }
+

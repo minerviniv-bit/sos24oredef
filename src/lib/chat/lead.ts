@@ -39,3 +39,4 @@ export function extractLeadAndStrip(
 
   return { text, lead };
 }
+

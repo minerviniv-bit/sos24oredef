@@ -1,4 +1,4 @@
-﻿// src/data/quartieri-roma.ts
+// src/data/quartieri-roma.ts
 export type MacroSlug = "roma-centro" | "roma-nord" | "roma-sud" | "roma-ovest" | "roma-est" | "litorale";
 export type Area = { slug: string; label: string; macro: MacroSlug };
 
@@ -140,3 +140,4 @@ export const QUARTIERI_SLUGS: string[] = ROMA_AREAS.map(a => a.slug);
 export function findQuartiere(slug: string): Quartiere | undefined {
   return findArea(slug);
 }
+

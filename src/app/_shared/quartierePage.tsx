@@ -1,4 +1,5 @@
-﻿import type { Metadata } from "next";
+import type { ServiceKey } from "@/app/_shared/serviceCityConfig";
+import type { Metadata } from "next";
 import DistrictPageShell from "./DistrictPageShell";
 import { baseUrl, fetchSeo, fetchAssignment, ucSlug, CITY, NUMERO_VERDE } from "./dataFetch";
 import { mascotsByService } from "@/app/_shared/serviceCityConfig";
@@ -136,3 +137,4 @@ const mascotSrc = mascotsByService[s] ?? "/mascotte/capitansos-mappa.webp";
 
 // Consigliato: completamente dinamico
 export const dynamic = "force-dynamic";
+

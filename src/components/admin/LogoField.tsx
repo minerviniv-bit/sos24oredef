@@ -115,3 +115,4 @@ export default function LogoField({ clientId, logoUrl, onChange }: Props) {
     </div>
   );
 }
+

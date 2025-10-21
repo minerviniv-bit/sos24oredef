@@ -5,9 +5,9 @@ import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-function runtimeBaseUrl() {
-  const h = headers();
-  const host = h.get("host") || "localhost:3002";
+async function runtimeBaseUrl() {
+  const h = await headers(); // Next 15: async
+  const host = h.get("host") ?? "localhost:3002";
   const proto = process.env.NODE_ENV === "development" ? "http" : "https";
   return process.env.NEXT_PUBLIC_SITE_URL ?? `${proto}://${host}`;
 }
@@ -21,7 +21,7 @@ type Macro = {
 };
 
 async function getMacro(): Promise<Macro[]> {
-  const base = runtimeBaseUrl();
+  const base = await runtimeBaseUrl();
   const res = await fetch(`${base}/api/public/macro-aree`, { next: { revalidate: 600 } });
   if (!res.ok) return [];
   return res.json();
@@ -148,7 +148,7 @@ export default async function CityPage() {
 }
 
 async function MacroAreasList({ macroSlug }: { macroSlug: string }) {
-  const base = runtimeBaseUrl();
+  const base = await runtimeBaseUrl();
   const res = await fetch(`${base}/api/public/areas?macro=${macroSlug}`, { next: { revalidate: 600 } });
   const areas: { area_slug: string; label: string }[] = res.ok ? await res.json() : [];
   if (!areas.length) return <div className="px-4 pb-4 text-sm text-neutral-400">Nessun quartiere trovato.</div>;
@@ -168,3 +168,4 @@ async function MacroAreasList({ macroSlug }: { macroSlug: string }) {
     </div>
   );
 }
+

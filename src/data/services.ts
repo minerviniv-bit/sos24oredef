@@ -1,4 +1,4 @@
-﻿// src/data/services.ts
+// src/data/services.ts
 import { SERVICES as NAV_SERVICES } from "@/app/_shared/serviceNavConfig";
 
 // Descrizioni sintetiche per la HOME
@@ -45,3 +45,4 @@ export const SERVICES = NAV_SERVICES.map((s) => ({
   cities: ["roma"],                 // estendi qui quando aggiungi altre città
   cityLabels: { roma: "Roma" },
 }));
+

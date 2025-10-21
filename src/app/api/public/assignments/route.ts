@@ -61,8 +61,11 @@ export async function GET(req: Request) {
       .order("area_label", { ascending: true });
 
     // Se filtro per service, includo anche le zone libere (service IS NULL)
-    // @ts-expect-error PostgREST or() syntax è accettata ma non tipizzata nel client
-    if (service) qb = qb.or(`service.eq.${service},service.is.null`);
+    if (service) {
+      // PostgREST or() accetta questa sintassi; codifico il valore per sicurezza
+      const s = encodeURIComponent(service);
+      qb = qb.or(`service.eq.${s},service.is.null`);
+    }
 
     const { data, error } = await qb;
 
@@ -73,7 +76,9 @@ export async function GET(req: Request) {
     const rows = Array.isArray(data) ? (data as FlatRow[]) : [];
 
     if (!grouped) {
-      return NextResponse.json({ data: rows });
+      return NextResponse.json({ data: rows }, {
+        headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=120" },
+      });
     }
 
     // Raggruppo per macro
@@ -97,13 +102,15 @@ export async function GET(req: Request) {
       });
     }
 
-    const groupedOut = Object.values(groupsMap).sort(
-      (a, b) => a.sort_order - b.sort_order
-    );
+    const groupedOut = Object.values(groupsMap).sort((a, b) => a.sort_order - b.sort_order);
 
-    return NextResponse.json({ data: groupedOut });
+    return NextResponse.json(
+      { data: groupedOut },
+      { headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=120" } }
+    );
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Server error";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+

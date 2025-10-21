@@ -15,18 +15,11 @@ const PUBLIC_TO_DB: Record<string, string[]> = {
   litorale: ["litorale", "litorale-romano"],
 };
 
-type AreaRow = {
-  slug: string;
-  label: string;
-  macro_slug: string;
-  city: string;
-};
-
 export async function GET(req: NextRequest) {
-  const supa = supabaseAnon();
-  const macroPublic = req.nextUrl.searchParams.get("macro") || "";
+  const supa = await supabaseAnon(); // factory -> sempre con le parentesi
+  const macroPublic = (req.nextUrl.searchParams.get("macro") || "").trim();
 
-  // Se non viene passato il parametro "macro", restituisco tutte le aree
+  // Se non viene passato "macro", restituisco tutte le aree della città
   if (!macroPublic) {
     const { data, error } = await supa
       .from("areas")
@@ -35,17 +28,23 @@ export async function GET(req: NextRequest) {
       .order("label");
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!data) return NextResponse.json([], { status: 200 });
+
+    // Narrowing esplicito per evitare "never"
+    const rows = (data ?? []) as Array<{ slug: string; label: string }>;
 
     return NextResponse.json(
-      data.map(r => ({ area_slug: r.slug, label: r.label })),
+      rows.map((r) => ({ area_slug: r.slug, label: r.label })),
       { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } }
     );
   }
 
   // Traduzione slug pubblico -> slug DB
   const dbSlugs = PUBLIC_TO_DB[macroPublic] || [];
-  if (!dbSlugs.length) return NextResponse.json([], { status: 200 });
+  if (dbSlugs.length === 0) {
+    return NextResponse.json([], {
+      headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" },
+    });
+  }
 
   const { data, error } = await supa
     .from("areas")
@@ -55,10 +54,18 @@ export async function GET(req: NextRequest) {
     .order("label");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!data) return NextResponse.json([], { status: 200 });
+
+  // Narrowing esplicito
+  const rows = (data ?? []) as Array<{
+    slug: string;
+    label: string;
+    macro_slug: string;
+    city: string;
+  }>;
 
   return NextResponse.json(
-    data.map(r => ({ area_slug: r.slug, label: r.label })),
+    rows.map((r) => ({ area_slug: r.slug, label: r.label })),
     { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } }
   );
 }
+

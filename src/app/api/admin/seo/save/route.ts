@@ -1,6 +1,7 @@
 // src/app/api/admin/seo/save/route.ts
 import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase/server";
+import type { Json, TablesInsert } from "@/lib/supabase/db-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +12,7 @@ type SeoBlock = {
   h1?: string | null;
   body_html?: string | null;
   faqs?: Array<{ q: string; a: string }> | null;
-  json_ld?: unknown; // era any
+  json_ld?: unknown; // verrà normalizzato a Json
 };
 
 type SaveItem = {
@@ -28,31 +29,13 @@ type SaveItem = {
   seo: SeoBlock; // richiesto per il save
 };
 
-type SeoPagesUpsertPayload = {
-  scope: "area" | "city";
-  service: string;
-  city: string;
-  area_slug: string | null;
-  client_id: string | null;
-  title: string | null;
-  meta_description: string | null;
-  h1: string | null;
-  body_html: string | null;
-  faqs: Array<{ q: string; a: string }> | null;
-  json_ld: unknown | null;
-  model_used: string | null;
-  status: "draft" | "published";
-  updated_at: string | null;
-  published_at?: string | null; // non lo tocchiamo in save
-};
-
-// type guard: plain object
+// plain object guard
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-// normalizza JSON a null se vuoto
-const nz = <T>(v: T | null | undefined): T | null => {
+// normalizza JSON a null se vuoto (solo Json!)
+const nz = <T extends Json>(v: T | null | undefined): T | null => {
   if (v == null) return null;
   if (Array.isArray(v) && v.length === 0) return null;
   if (isPlainObject(v) && Object.keys(v).length === 0) return null;
@@ -60,14 +43,7 @@ const nz = <T>(v: T | null | undefined): T | null => {
 };
 
 function pickAreaSlug(it: SaveItem) {
-  return (
-    it.area_slug ||
-    it.area ||
-    it.quartiere ||
-    it.district ||
-    it.zone ||
-    ""
-  )
+  return (it.area_slug || it.area || it.quartiere || it.district || it.zone || "")
     .toLowerCase()
     .trim();
 }
@@ -87,10 +63,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const bodyUnknown = await req.json().catch(() => ({}));
-    const items: SaveItem[] = Array.isArray((bodyUnknown as { items?: unknown }).items)
-      ? ((bodyUnknown as { items: unknown[] }).items as SaveItem[])
-      : [];
+    const body = (await req.json().catch(() => ({}))) as { items?: unknown[] };
+    const items: SaveItem[] = Array.isArray(body.items) ? (body.items as SaveItem[]) : [];
 
     if (items.length === 0) {
       return NextResponse.json({ ok: false, error: "No items provided" }, { status: 400 });
@@ -103,14 +77,10 @@ export async function POST(req: Request) {
       const scope = String(raw.scope || "area").toLowerCase() as "area" | "city";
       const service = String(raw.service || "").toLowerCase().trim();
       const city = String(raw.city || "").toLowerCase().trim();
-      const area_slug = scope === "area" ? pickAreaSlug(raw) : undefined;
+      const areaSlug = scope === "area" ? pickAreaSlug(raw) : undefined;
 
-      if (!service || !city || (scope === "area" && !area_slug)) {
-        results.push({
-          ok: false,
-          error: "Parametri mancanti (service/city/area_slug)",
-          input: raw,
-        });
+      if (!service || !city || (scope === "area" && !areaSlug)) {
+        results.push({ ok: false, error: "Parametri mancanti (service/city/area_slug)", input: raw });
         continue;
       }
       if (!raw.seo) {
@@ -119,44 +89,45 @@ export async function POST(req: Request) {
       }
 
       const now = new Date().toISOString();
-      // ATTENZIONE: natural_key NON va nel payload (colonna GENERATED)
-      const payload: SeoPagesUpsertPayload = {
+
+      // ATTENZIONE:
+      // - i campi stringa qui sotto devono essere string (non null) -> coalesco a ""
+      // - faqs/json_ld devono essere Json | null
+      // - natural_key è GENERATED in DB, NON va nel payload
+      const payload: TablesInsert<"seo_pages"> = {
         scope,
         service,
         city,
-        area_slug: area_slug ?? null,
+        area_slug: areaSlug ?? null,
         client_id: raw.client_id ?? null,
-        title: raw.seo.title ?? null,
-        meta_description: raw.seo.meta_description ?? null,
-        h1: raw.seo.h1 ?? null,
-        body_html: raw.seo.body_html ?? null,
-        faqs: nz(raw.seo.faqs),
-        json_ld: nz(raw.seo.json_ld),
+
+        title: raw.seo.title ?? "",
+        meta_description: raw.seo.meta_description ?? "",
+        h1: raw.seo.h1 ?? "",
+        body_html: raw.seo.body_html ?? "",
+
+        faqs: nz(raw.seo.faqs as unknown as Json),
+        json_ld: nz(raw.seo.json_ld as unknown as Json),
+
         model_used: raw.model_used ?? null,
         status: "draft",
         updated_at: now,
+        published_at: null, // in save non pubblichiamo
       };
 
-      // upsert in bozza (non tocco published_at)
       const { data, error } = await supa
         .from("seo_pages")
-        .upsert(payload, { onConflict: "natural_key" }) // usa UNIQUE su natural_key (generated)
+        .upsert(payload, { onConflict: "natural_key" }) // UNIQUE su natural_key (generated)
         .select("*")
         .maybeSingle();
 
-      if (error) {
-        results.push({ ok: false, error: error.message, input: raw });
-      } else {
-        results.push({ ok: true, action: "upsert->draft", data });
-      }
+      if (error) results.push({ ok: false, error: error.message, input: raw });
+      else results.push({ ok: true, action: "upsert->draft", data });
     }
 
     return NextResponse.json({ ok: true, results });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Server error";
-    return NextResponse.json(
-      { ok: false, error: msg },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

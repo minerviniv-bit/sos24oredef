@@ -1,4 +1,4 @@
-import { buildQuartiereHandlers } from "@/app/_shared/quartierePage";
+﻿import { buildQuartiereHandlers } from "@/app/_shared/quartierePage";
 
 export const dynamic = "force-dynamic";
 

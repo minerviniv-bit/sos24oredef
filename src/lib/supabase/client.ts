@@ -1,22 +1,18 @@
-// src/lib/supabase/client.ts
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./types"; // <-- esiste nella tua cartella
 
-// 🔹 Priorità: usa prima le variabili server-side, poi quelle pubbliche (NEXT_PUBLIC_)
-const url =
-  process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anon =
-  process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!url || !anon) {
-  throw new Error("❌ Missing SUPABASE_URL or SUPABASE_ANON_KEY");
-}
+const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 /**
- * Client Supabase anonimo per chiamate lato pubblico (API pubbliche / pagine)
- * Non salva sessioni e non usa cookies → ideale per Next.js App Router.
+ * Factory anon per uso pubblico/edge.
+ * Tipizzata correttamente con il tuo Database.
  */
-export const supabaseAnon = () =>
-  createClient(url, anon, {
+export function supabaseAnon(): SupabaseClient<Database> {
+  return createClient<Database>(url, anon, {
     auth: { persistSession: false },
+    // opzionale ma utile con Next/Edge
     global: { fetch: fetch.bind(globalThis) },
   });
+}
+

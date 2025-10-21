@@ -252,3 +252,4 @@ async function MacroAreasList({
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 // src/lib/chat/prompts/categories/spurgo.ts
-import type { CategoryModule } from "./common";
+import type { CategoryModule } from "../prompts/common";
 
 export const SPURGO: CategoryModule = {
   name: "spurgo",
@@ -14,3 +14,4 @@ SPURGO — Vision:
 - Riconosci pozzetti/fogne, ristagni e traboccamenti; segnala se serva accesso autospurgo.
 `.trim(),
 };
+

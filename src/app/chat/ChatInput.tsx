@@ -127,3 +127,4 @@ export default function ChatInput({ onSend, onImagePicked }: Props) {
     </div>
   );
 }
+

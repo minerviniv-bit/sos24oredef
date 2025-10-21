@@ -90,3 +90,4 @@ SelectItem.displayName = "SelectItem";
 
 // Value (testo selezionato nel trigger)
 export const SelectValue = SelectPrimitive.Value;
+

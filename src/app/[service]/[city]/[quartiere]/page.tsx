@@ -1,4 +1,4 @@
-// src/app/[service]/[city]/[quartiere]/page.tsx
+﻿// src/app/[service]/[city]/[quartiere]/page.tsx
 import Link from "next/link";
 
 export default function QuartierePage({ params }: { params: { service: string; city: string; quartiere: string }}) {

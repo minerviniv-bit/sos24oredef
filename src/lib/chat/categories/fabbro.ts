@@ -1,6 +1,5 @@
 // src/lib/chat/prompts/categories/fabbro.ts
-import type { CategoryModule } from "./common";
-
+import type { CategoryModule } from "../prompts/common";
 export const FABBRO: CategoryModule = {
   name: "fabbro",
   prompt: `
@@ -16,3 +15,4 @@ FABBRO — Vision:
 - Se sfocata/angolata male, chiedi una foto frontale piú nitida.
 `.trim(),
 };
+

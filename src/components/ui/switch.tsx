@@ -26,3 +26,4 @@ export function Switch({ checked, onCheckedChange, ...props }: SwitchProps) {
     </label>
   );
 }
+

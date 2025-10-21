@@ -1,5 +1,10 @@
 // src/lib/chat/prompts/base.ts
-import { SHARED_RULES, CLOSING_CTA, LEAD_SCHEMA, type PromptHints } from "./categories/common";
+import {
+  SHARED_RULES,
+  CLOSING_CTA,
+  LEAD_SCHEMA,
+  type PromptHints,
+} from "./common";
 
 export function baseSystem(quartieri: string[], hints?: PromptHints) {
   const extraHint =
@@ -21,3 +26,4 @@ ${CLOSING_CTA}
 ${LEAD_SCHEMA}
 `.trim();
 }
+

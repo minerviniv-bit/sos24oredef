@@ -15,3 +15,4 @@ export const SERVICES = [
   { slug: "vetraio",             label: "Vetraio",                href: "/vetraio",             icon: "/mascotte/vetraio.webp" },    // <— nome reale
   { slug: "assistenza-stradale", label: "Assistenza Stradale",    href: "/assistenza-stradale", icon: "/mascotte/carroattrezzi.webp" },
 ];
+

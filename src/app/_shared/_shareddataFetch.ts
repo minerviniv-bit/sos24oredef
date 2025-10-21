@@ -51,3 +51,4 @@ export async function fetchAssignment(service: string, city: string, area: strin
 export function ucSlug(s: string) {
   return s.replace(/-/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 }
+

@@ -1,5 +1,5 @@
-// src/lib/chat/prompts/categories/disinfestazioni.ts
-import type { CategoryModule } from "./common";
+// src/lib/chat/categories/disinfestazioni.ts
+import type { CategoryModule } from "../prompts/common";
 
 export const DISINFESTAZIONI: CategoryModule = {
   name: "disinfestazioni",
@@ -14,3 +14,4 @@ DISINFESTAZIONI — Vision:
 - Se possibile riconosci specie/nido e descrivi in modo semplice (niente percentuali).
 `.trim(),
 };
+

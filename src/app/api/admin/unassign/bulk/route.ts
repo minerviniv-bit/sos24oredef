@@ -1,6 +1,6 @@
 // src/app/api/admin/unassign/bulk/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseService } from "@/lib/supabase/server"; // <— aggiorna il path se diverso
+import { supabaseService } from "@/lib/supabase/server";
 
 type AssignRow = {
   service: string;
@@ -41,9 +41,9 @@ export async function POST(req: NextRequest) {
 
     const sb = supabaseService();
 
-    // Leggi lo stato attuale per quelle aree
+    // ✅ Leggi lo stato attuale per quelle aree
     const { data: existing, error: e1 } = await sb
-      .from<AssignRow>("assignments")
+      .from("assignments")
       .select("area_slug,client_id")
       .eq("service", service)
       .eq("city", city)
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     let changed = 0;
     if (toUpsert.length > 0) {
       const { data: up, error: e2 } = await sb
-        .from<AssignRow>("assignments")
+        .from("assignments")
         .upsert(toUpsert, { onConflict: "service,city,area_slug" })
         .select("area_slug");
 
@@ -108,3 +108,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
+

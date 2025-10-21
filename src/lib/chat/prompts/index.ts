@@ -1,11 +1,10 @@
 // src/lib/chat/prompts/index.ts
 
-export { buildSystemPrompt } from "./base";
-export { COMMON_QUESTIONS, COMMON_RULES } from "./common";
+export { baseSystem } from "./base";
+export { SHARED_RULES, CLOSING_CTA, LEAD_SCHEMA } from "./common";
 
 // --- Vision Instructions unificato ---
 export function buildVisionInstructions(serviceHint?: string): string {
-  // Qui puoi differenziare in base al servizio se vuoi (idraulico, fabbro, ecc.)
   switch (serviceHint) {
     case "fabbro":
       return `
@@ -68,3 +67,4 @@ Evita valutazioni tecniche, prezzi o percentuali di certezza.
 `.trim();
   }
 }
+

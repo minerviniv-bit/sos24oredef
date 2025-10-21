@@ -183,3 +183,4 @@ export function InvoicePreview({ data }: { data: PreviewData }) {
     </div>
   );
 }
+

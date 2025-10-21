@@ -1,5 +1,5 @@
-// src/lib/chat/prompts/categories/caldaie.ts
-import type { CategoryModule } from "./common";
+// src/lib/chat/categories/caldaie.ts
+import type { CategoryModule } from "../prompts/common";
 
 export const CALDAIE: CategoryModule = {
   name: "caldaie",
@@ -13,3 +13,4 @@ CALDAIE — Vision:
 - Se vedi display con codice errore o targhetta con marca/modello, estraili (solo per la macchina).
 `.trim(),
 };
+

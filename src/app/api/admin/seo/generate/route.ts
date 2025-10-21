@@ -34,6 +34,7 @@ type GenerateBody = {
   model?: string;
 };
 
+// ===== Utility =====
 function wordCountFromHtml(html: string) {
   const txt = String(html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   return txt ? txt.split(" ").length : 0;
@@ -69,6 +70,7 @@ function toFaq(f: unknown): FAQItem {
   return { q: q.trim(), a: a.trim() };
 }
 
+// ===== MAIN HANDLER =====
 export async function POST(req: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
@@ -80,17 +82,18 @@ export async function POST(req: Request) {
     if (!type || !service || !city) {
       return NextResponse.json({ ok: false, error: "Parametri mancanti" }, { status: 400 });
     }
+
     const areasArr: string[] = Array.isArray(areas) ? areas.map(String) : [];
     if (type === "area" && areasArr.length === 0) {
       return NextResponse.json({ ok: false, error: "Nessuna area fornita per scope=area" }, { status: 400 });
     }
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const modelToUse = ["gpt-4o", "gpt-4o-mini"].includes(String(model))
+      ? String(model)
+      : MODEL_AREAS;
 
-    // ✅ usa solo modelli ufficiali
-    const modelToUse = ["gpt-4o", "gpt-4o-mini"].includes(String(model)) ? String(model) : MODEL_AREAS;
-
-    // 🚀 Istruzioni SEO
+    // ===== Prompt base SEO =====
     const sys = [
       "Sei un SEO copywriter senior specializzato in contenuti locali per il web.",
       "Obiettivo: generare un testo ottimizzato per Google che posizioni la pagina su query locali competitive.",
@@ -111,6 +114,7 @@ export async function POST(req: Request) {
       "Stile: discorsivo, ricco, vario. Evita frasi troppo corte e ripetitive. Ogni paragrafo deve sembrare scritto da un esperto umano.",
     ].join("\n");
 
+    // ===== Generatore singolo =====
     async function generateOne(areaSlug?: string): Promise<GeneratedItem> {
       const user = [
         `Servizio: ${service}`,
@@ -131,7 +135,9 @@ export async function POST(req: Request) {
       });
 
       let raw = getOutputText(r).trim();
-      if (raw.startsWith("```")) raw = raw.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
+      if (raw.startsWith("```")) {
+        raw = raw.replace(/^```(json)?/i, "").replace(/```$/, "").trim();
+      }
 
       let seo: SEO;
       try {
@@ -141,21 +147,28 @@ export async function POST(req: Request) {
           meta_description: parsed.meta_description,
           h1: parsed.h1,
           body_html: parsed.body_html,
-          faqs: Array.isArray(parsed.faqs) ? parsed.faqs.map(toFaq).filter((f) => f.q && f.a) : [],
+          faqs: Array.isArray(parsed.faqs)
+            ? parsed.faqs.map(toFaq).filter((f) => f.q && f.a)
+            : [],
           json_ld: parsed.json_ld,
         };
       } catch {
-        const place = areaSlug ? `${cap(areaSlug)} – ${cap(city)}` : cap(city);
+        const safeCity = city ?? "";
+        const safeArea = areaSlug ?? "";
+        const safeService = service ?? "";
+        const place = safeArea ? `${cap(safeArea)} – ${cap(safeCity)}` : cap(safeCity);
+
         seo = {
-          title: `${cap(service)} ${place} | SOS24ORE.it`,
-          meta_description: `Interventi ${service} a ${place}. Numero Verde 800 00 24 24.`,
-          h1: `${cap(service)} a ${areaSlug ? cap(areaSlug) : cap(city)}`,
+          title: `${cap(safeService)} ${place} | SOS24ORE.it`,
+          meta_description: `Interventi ${safeService} a ${place}. Numero Verde 800 00 24 24.`,
+          h1: `${cap(safeService)} a ${safeArea ? cap(safeArea) : cap(safeCity)}`,
           body_html: "<p>Contenuto generato. Estensione automatica in corso…</p>",
           faqs: [],
           json_ld: { "@type": "LocalBusiness", name: "SOS24ORE.it" },
         };
       }
 
+      // ===== Espansione automatica se troppo corto =====
       let html = harden(String(seo.body_html || ""));
       let tries = 0;
       while (wordCountFromHtml(html) < MIN_WORDS && tries < 2) {
@@ -176,23 +189,29 @@ export async function POST(req: Request) {
         });
 
         let more = getOutputText(ext).trim();
-        if (more.startsWith("```")) more = more.replace(/^```(html)?/i, "").replace(/```$/, "").trim();
+        if (more.startsWith("```")) {
+          more = more.replace(/^```(html)?/i, "").replace(/```$/, "").trim();
+        }
         html += "\n" + more;
       }
 
       seo.body_html = harden(html);
 
+      const safeService = service ?? "";
+      const safeCity = city ?? "";
+
       return {
-        key: areaSlug ? `${service}:${city}:${areaSlug}` : `${service}:${city}`,
+        key: areaSlug ? `${safeService}:${safeCity}:${areaSlug}` : `${safeService}:${safeCity}`,
         scope: areaSlug ? "area" : "city",
-        service,
-        city,
+        service: safeService,
+        city: safeCity,
         area_slug: areaSlug || undefined,
         model_used: modelToUse,
         seo,
       };
     }
 
+    // ===== Esecuzione globale =====
     const items: GeneratedItem[] = [];
     if (type === "area") {
       for (const a of areasArr) items.push(await generateOne(String(a)));
@@ -203,7 +222,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, items });
   } catch (e: unknown) {
     console.error(e);
-    const msg = e instanceof Error ? e.message : "Errore";
+    const msg = e instanceof Error ? e.message : "Errore sconosciuto";
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
+

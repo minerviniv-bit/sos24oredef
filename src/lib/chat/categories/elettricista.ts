@@ -1,5 +1,5 @@
-// src/lib/chat/prompts/categories/elettricista.ts
-import type { CategoryModule } from "./common";
+// src/lib/chat/categories/elettricista.ts
+import type { CategoryModule } from "../prompts/common";
 
 export const ELETTRICISTA: CategoryModule = {
   name: "elettricista",
@@ -14,3 +14,4 @@ ELETTRICISTA — Vision:
 - Quadro elettrico, differenziale scattato, prese annerite o cavi danneggiati: descrivi senza gergo.
 `.trim(),
 };
+

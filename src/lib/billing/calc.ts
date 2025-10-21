@@ -32,3 +32,4 @@ export function calcTotals(input: OrderInput): OrderTotals {
 
   return { imponibile, sconto, imponibile_netto, iva, totale, rata };
 }
+

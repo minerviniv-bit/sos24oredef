@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing service/city/area" }, { status: 400 });
   }
 
-  const supa = supabaseAnon();
+  const supa = await supabaseAnon();
   const { data, error } = await supa
     .from("v_assignments_public")
     .select("*")
@@ -27,3 +27,4 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return new NextResponse(JSON.stringify({ data: data ?? null }), { status: 200, headers: cacheHeaders });
 }
+

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing service/city" }, { status: 400 });
   }
 
-  const supa = supabaseAnon();
+  const supa = await supabaseAnon();
 
   // 1) SEO area
   if (area) {
@@ -44,3 +44,4 @@ export async function GET(req: NextRequest) {
   if (err2) return NextResponse.json({ error: err2.message }, { status: 500 });
   return new NextResponse(JSON.stringify(citySeo ?? {}), { status: 200, headers: cacheHeaders });
 }
+

@@ -1,4 +1,4 @@
-﻿export default function Faq({ items }:{items:{q:string;a:string}[]}) {
+export default function Faq({ items }:{items:{q:string;a:string}[]}) {
   return (
     <section className="max-w-6xl mx-auto px-4 py-12">
       <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Domande frequenti</h2>
@@ -13,3 +13,4 @@
     </section>
   );
 }
+

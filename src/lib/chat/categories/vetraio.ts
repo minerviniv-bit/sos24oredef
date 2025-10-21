@@ -1,5 +1,5 @@
 // src/lib/chat/prompts/categories/vetraio.ts
-import type { CategoryModule } from "./common";
+import type { CategoryModule } from "../prompts/common";
 
 export const VETRAIO: CategoryModule = {
   name: "vetraio",
@@ -13,3 +13,4 @@ VETRAIO — Vision:
 - Valuta vetrocamera vs singolo, descrivi rottura e, se possibile, area/infisso.
 `.trim(),
 };
+

@@ -155,3 +155,4 @@ export function InvoicePreview({ data }: { data: Preview }) {
     </div>
   );
 }
+

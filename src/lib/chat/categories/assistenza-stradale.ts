@@ -1,5 +1,5 @@
-// src/lib/chat/prompts/categories/assistenza-stradale.ts
-import type { CategoryModule } from "./common";
+// src/lib/chat/categories/assistenza-stradale.ts
+import type { CategoryModule } from "../prompts/common";
 
 export const ASSISTENZA_STRADALE: CategoryModule = {
   name: "assistenza-stradale",
@@ -14,3 +14,4 @@ ASSISTENZA-STRADALE — Vision:
 - Se si vede ruota a terra/batteria/urto, descrivilo in modo semplice.
 `.trim(),
 };
+

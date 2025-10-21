@@ -40,3 +40,4 @@ export async function getSeoContent(path: string): Promise<SeoRecord> {
     status: "published",
   };
 }
+

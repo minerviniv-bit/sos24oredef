@@ -1,17 +1,18 @@
 // src/app/api/lead/route.ts
 import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase/server";
+import type { TablesInsert, Json } from "@/lib/supabase/db-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// sostituito any con unknown e gestione sicura
-function scrubPhone(input: unknown) {
+// ripulisce numeri di telefono dal JSON (lascia il numero verde 800 00 24 24)
+function scrubPhone(input: Json | null): Json | null {
   if (input == null) return input;
   const s = JSON.stringify(input).replace(/\+?\d[\d \-]{7,}\b/g, (m) =>
     /800\s*00\s*24\s*24/.test(m) ? m : "【numero rimosso】"
   );
-  return JSON.parse(s);
+  return JSON.parse(s) as Json;
 }
 
 export async function POST(req: Request) {
@@ -32,19 +33,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Lead incompleto (servizio/zona)" }, { status: 400 });
     }
 
-    const payload = {
+    const payload: TablesInsert<"leads"> = {
+      // colonne reali della tabella `leads`
       source: String(source || "chat"),
       servizio: String(lead.servizio || ""),
       zona: String(lead.zona || ""),
-      urgenza: lead.urgenza ?? null,
-      fascia_oraria: lead.fascia_oraria ?? null,
-      problema: lead.problema ?? null,
-      accesso: lead.accesso ?? null,
-      note: lead.note ?? null,
-      extra: lead.extra ?? null,
-      pricing: lead.pricing ?? null,
-      contatto: scrubPhone(lead.contatto ?? null),
-      transcript: Array.isArray(transcript) ? transcript.slice(-50) : null,
+      urgenza: (lead.urgenza as string | null) ?? null,
+      fascia_oraria: (lead.fascia_oraria as string | null) ?? null,
+      problema: (lead.problema as string | null) ?? null,
+      accesso: (lead.accesso as string | null) ?? null,
+      note: (lead.note as string | null) ?? null,
+      extra: (lead.extra as Json | null) ?? null,
+      pricing: (lead.pricing as Json | null) ?? null,
+      contatto: scrubPhone(((lead.contatto as Json | null) ?? null)),
+      transcript: Array.isArray(transcript) ? (transcript.slice(-50) as unknown as Json) : null,
       created_at: when || new Date().toISOString(),
     };
 

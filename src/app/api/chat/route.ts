@@ -1,4 +1,9 @@
+// src/app/api/chat/route.ts
 import OpenAI from "openai";
+import type {
+  ChatCompletionMessageParam,
+  ChatCompletionContentPart,
+} from "openai/resources/chat/completions";
 import { QUARTIERI_ROMA } from "@/data/quartieri-roma";
 
 import { buildSystemPrompt, buildVisionInstructions } from "@/lib/chat/prompts";
@@ -21,26 +26,17 @@ export const runtime = "edge";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-// evitiamo any: il listino lo trattiamo come unknown
-const TARIFFS: unknown = (() => {
-  try {
-    return JSON.parse(process.env.SOS_TARIFFS || "null");
-  } catch {
-    return null;
-  }
-})();
-
-// messaggi chat minimi che ci servono qui
+/** ===== Tipi utili ===== */
 type MsgPart =
   | { type: "text"; text: string }
   | { type: "image_url"; image_url: { url: string } };
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";
-  content: unknown;
+  // negli storici salviamo stringhe; quando inviamo a OpenAI usiamo MsgPart[]
+  content: string | MsgPart[];
 };
 
-// lead: solo i campi che tocchiamo in questo handler
 type LeadShape = {
   servizio?: ServiceKey | string;
   zona?: string;
@@ -50,10 +46,30 @@ type LeadShape = {
   pricing?: { ready: boolean; item: string; price: number; note?: string };
 };
 
+type HistMsgUA = { role: "user" | "assistant"; content: string };
+
+/** Derivo il tipo Tariffs dall’argomento della funzione computeFabbroRange */
+type Tariffs = Parameters<typeof computeFabbroRange>[0];
+
+/** Type guard minimale per validare l’oggetto parse-ato */
+function isTariffs(v: unknown): v is Tariffs {
+  return typeof v === "object" && v !== null;
+}
+
+/** Listino (parse sicuro + narrowing) */
+const TARIFFS: Tariffs | null = (() => {
+  try {
+    const parsed = JSON.parse(process.env.SOS_TARIFFS || "null");
+    return isTariffs(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+})();
+
+/** Quartieri normalizzati */
 const QUARTIERI_LIST: string[] = Array.isArray(QUARTIERI_ROMA)
   ? QUARTIERI_ROMA.map((q) => {
       if (typeof q === "string") return q;
-      // se è oggetto, proviamo a leggere label; fallback a stringa grezza
       const maybe = (q as Record<string, unknown>)?.label;
       return typeof maybe === "string" ? maybe : String(q);
     })
@@ -77,7 +93,15 @@ function toKnownQuartiere(z: string) {
 const PRICE_IN = Number(process.env.OPENAI_PRICE_IN || 0);
 const PRICE_OUT = Number(process.env.OPENAI_PRICE_OUT || 0);
 
-// Helper: converte un URL immagine in data URL (evita 400 da storage esterni)
+/** ArrayBuffer -> base64 usando Web API (compatibile Edge) */
+function arrayBufferToBase64(buf: ArrayBuffer): string {
+  let binary = "";
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+/** Converte un URL immagine in data URL (evita 400 da storage esterni) */
 async function toDataUrl(url: string): Promise<string | null> {
   try {
     if (!url || url.startsWith("data:")) return url;
@@ -85,8 +109,7 @@ async function toDataUrl(url: string): Promise<string | null> {
     if (!res.ok) return null;
     const ct = res.headers.get("content-type") || "image/jpeg";
     const buf = await res.arrayBuffer();
-    // @ts-expect-error Buffer è disponibile nel runtime edge di Vercel/Next
-    const base64 = Buffer.from(buf).toString("base64");
+    const base64 = arrayBufferToBase64(buf);
     return `data:${ct};base64,${base64}`;
   } catch {
     return null;
@@ -101,6 +124,8 @@ export async function POST(req: Request) {
         headers: { "content-type": "application/json" },
       });
     }
+
+    // piccolo gate opzionale
     const gate = process.env.CHAT_GATE_KEY || "";
     const hdr = req.headers.get("x-chat-key") || "";
     if (gate && hdr !== gate) {
@@ -130,10 +155,9 @@ export async function POST(req: Request) {
         .map((m) => (typeof m.content === "string" ? m.content : ""))
         .find((s) => s.length > 0) || "";
 
-    // Vuole il prezzo?
     const wantPrice = /\b(prezzo|costo|quanto|preventivo)\b/i.test(lastUserText);
 
-    // ===== EMERGENZE PUBBLICHE (112 / 113 / 115 / 118) — early return
+    /** EMERGENZE PUBBLICHE: early return */
     const emerg = detectPublicSafetyEmergency(lastUserText);
     if (emerg) {
       const base =
@@ -159,12 +183,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // ===== HINTS lato server
+    // Hints lato server
     const svcHint: ServiceKey | null = detectService(lastUserText);
     const urgHint: UrgenzaKey | null = detectUrgency(lastUserText);
     const zoneHintRaw: string | null = detectZoneFromText(lastUserText, QUARTIERI_LIST);
 
-    // ===== Saluto semplice
+    // Saluto semplice
     if (isGreeting(lastUserText) && lastUserText.length < 20) {
       const text =
         "Ciao! Sono l’assistente SOS24ORE. Puoi descrivermi il problema e in che zona/quartiere ti trovi? Se vuoi il prezzo indicativo, puoi anche mandare una foto.";
@@ -181,7 +205,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ===== Vision payload: SOLO se chiede prezzo (o ci sono immagini)
+    // Vision payload: SOLO se chiede prezzo o ci sono immagini
     const needVision = images.length > 0 || wantPrice;
 
     const userContent: MsgPart[] = [
@@ -203,22 +227,25 @@ export async function POST(req: Request) {
       userContent.push({ type: "image_url", image_url: { url: dataUrl } });
     }
 
-    // ===== System prompt dinamico
+    // System prompt dinamico
     const system = buildSystemPrompt(QUARTIERI_LIST, {
       service_hint: svcHint || undefined,
       zone_hint: zoneHintRaw || undefined,
       urgency_hint: urgHint || undefined,
     });
 
-    const messages: { role: "system" | "user" | "assistant"; content: string | MsgPart[] }[] = [
+    // Tipi corretti per OpenAI
+    const messages: ChatCompletionMessageParam[] = [
       { role: "system", content: system },
       { role: "system", content: `Listino presente: ${TARIFFS ? "SÌ" : "NO"}` },
-      // manteniamo la storia com'è, senza assumere il tipo del content
-      ...history.slice(0, -1).map((m) => ({
+      ...history.slice(0, -1).map<ChatCompletionMessageParam>((m) => ({
         role: m.role,
         content: typeof m.content === "string" ? m.content : "",
       })),
-      { role: "user", content: userContent },
+      {
+        role: "user",
+        content: userContent as unknown as ChatCompletionContentPart[],
+      },
     ];
 
     const completion = await client.chat.completions.create({
@@ -229,7 +256,7 @@ export async function POST(req: Request) {
 
     let text = completion.choices?.[0]?.message?.content ?? "";
 
-    // ===== 1) Estrai lead
+    // 1) Estrai lead
     const r = extractLeadAndStrip(text) as { text: string; lead: unknown };
     const cleanedText = r.text;
     let lead: LeadShape | null =
@@ -237,24 +264,26 @@ export async function POST(req: Request) {
 
     text = cleanedText;
 
-    // ===== 2) Normalizza lead + integra hint
+    // 2) Normalizza lead + integra hint
     if (lead?.zona) lead.zona = toKnownQuartiere(lead.zona);
     if (!lead?.servizio && svcHint) lead = { ...(lead || {}), servizio: svcHint };
     if (!lead?.urgenza && urgHint) lead = { ...(lead || {}), urgenza: urgHint };
     if (!lead?.zona && zoneHintRaw) lead = { ...(lead || {}), zona: toKnownQuartiere(zoneHintRaw) };
     if (images.length) {
       lead = lead || {};
-      lead.extra = { ...(lead.extra || {}), foto_url: (lead?.extra as { foto_url?: string })?.foto_url || images[0] };
+      lead.extra = {
+        ...(lead.extra || {}),
+        foto_url: (lead?.extra as { foto_url?: string })?.foto_url || images[0],
+      };
     }
 
-    // ===== 3) Pricing FABBRO — SOLO range, SOLO se vuole il prezzo o c'è foto
+    // 3) Pricing FABBRO — SOLO range, SOLO se vuole il prezzo o c'è foto
     if (
       (wantPrice || images.length > 0) &&
       lead?.servizio === "fabbro" &&
       /porta|serratura/i.test(String(lead?.problema || ""))
     ) {
-      const range: { min: number; max: number; nightAdd?: { min: number; max: number } } | null =
-        computeFabbroRange(TARIFFS as unknown);
+      const range = TARIFFS ? computeFabbroRange(TARIFFS) : null;
       if (range) {
         const extra = range.nightAdd
           ? ` In caso di notte/festivi si aggiungono circa € ${range.nightAdd.min} – € ${range.nightAdd.max}.`
@@ -277,23 +306,30 @@ export async function POST(req: Request) {
       text = `${text}\n\nPer stimare meglio, se puoi, inviami una foto del punto (es. toppa/serratura o dettaglio rilevante).`;
     }
 
-    // ===== 4) Header urgenza
+    // 4) Header urgenza
     const urg = (lead?.urgenza || "").toString().toLowerCase();
     const isImmediate = /\b(subito|immediato|adesso|ora)\b/.test(urg);
     if (isImmediate && !/^🚨 Urgenza: chiama ORA l’800 00 24 24/i.test(text)) {
       text = `🚨 Urgenza: chiama ORA l’800 00 24 24\n\n${text}`;
     }
 
-    // ===== 5) Gratuità chiamata
+    // 5) Gratuità chiamata
     if (/quanto.*costa.*chiamata|costa.*telefonata|prezzo.*chiamare/i.test(lastUserText)) {
       text = `${text}\n\nℹ️ Le chiamate verso 800 00 24 24 sono completamente gratuite, anche da cellulare.`;
     }
 
-    // ===== 6) Dedup & scrub
-    text = dedupeAssistantText(text, history as unknown as { role: string; content: string }[]);
+    // 6) Dedup & scrub (solo user/assistant, niente system)
+    const historyUA: HistMsgUA[] = history
+      .filter(
+        (m): m is { role: "user" | "assistant"; content: string } =>
+          (m.role === "user" || m.role === "assistant") && typeof m.content === "string"
+      )
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    text = dedupeAssistantText(text, historyUA);
     text = scrub(text);
 
-    // ===== 7) costo stimato
+    // 7) costo stimato
     const u = completion.usage;
     let cost: number | null = null;
     if (u && (PRICE_IN || PRICE_OUT)) {
@@ -312,3 +348,4 @@ export async function POST(req: Request) {
     });
   }
 }
+

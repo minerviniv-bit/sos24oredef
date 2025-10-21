@@ -22,3 +22,4 @@ export default function SafeImage({ src, alt, width, height, priority = false, .
     />
   );
 }
+

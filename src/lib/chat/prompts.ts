@@ -139,3 +139,4 @@ Analizza la foto per fornire indizi utili al tecnico. Evita prezzi, percentuali 
 `.trim();
   }
 }
+

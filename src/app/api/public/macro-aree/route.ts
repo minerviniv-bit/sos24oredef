@@ -21,7 +21,7 @@ const DB_TO_PUBLIC: Record<string, { pub: string; title: string }> = {
 const PUBLIC_ORDER = ["centro-prati", "nord", "est", "sud", "ovest", "litorale"];
 
 export async function GET() {
-  const supa = supabaseAnon();
+  const supa = await supabaseAnon();
 
   const { data: macros, error: e1 } = await supa
     .from("macro_areas")
@@ -96,3 +96,4 @@ export async function GET() {
     headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" },
   });
 }
+

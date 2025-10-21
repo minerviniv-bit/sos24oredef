@@ -15,3 +15,4 @@ export default function ChatMessage({ role, content }: Props) {
     </div>
   );
 }
+

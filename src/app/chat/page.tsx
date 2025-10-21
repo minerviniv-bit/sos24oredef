@@ -1,3 +1,4 @@
+// src/app/chat/page.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -29,7 +30,7 @@ type Lead = {
   handoff?: { wants_operator?: boolean };
 };
 
-const CHAT_KEY = process.env.NEXT_PUBLIC_CHAT_GATE_KEY || ""; // <-- necessario per /api/chat e /api/lead
+const CHAT_KEY = process.env.NEXT_PUBLIC_CHAT_GATE_KEY || ""; // <-- per /api/chat e /api/lead
 
 function cleanAssistantText(s: string) {
   if (!s) return s;
@@ -61,23 +62,27 @@ export default function ChatPage() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
+  // helper per aggiungere messaggi tipizzati
+  const pushMsg = (msg: Msg) => setMessages((m) => [...m, msg]);
+
   async function sendText(text: string, inlineImageUrl?: string) {
     const t = (text || "").trim();
     if (!t || loading) return;
 
-    const next = [...messages, { role: "user", content: t }];
+    const userMsg: Msg = { role: "user", content: t };
+    const next: Msg[] = [...messages, userMsg]; // <-- tipizzato
     setMessages(next);
     setLoading(true);
     setSentOk(null);
 
     try {
-      const imgs = (inlineImageUrl || imageUrl) ? [inlineImageUrl || imageUrl!] : [];
+      const imgs = inlineImageUrl || imageUrl ? [inlineImageUrl || (imageUrl as string)] : [];
 
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-chat-key": CHAT_KEY, // <-- QUI
+          "x-chat-key": CHAT_KEY,
         },
         body: JSON.stringify({
           messages: next,
@@ -88,18 +93,14 @@ export default function ChatPage() {
       if (!r.ok) throw new Error(j?.error || r.statusText);
 
       const cleaned = cleanAssistantText(j.text || "");
-      setMessages((m) => [...m, { role: "assistant", content: cleaned || "(nessuna risposta)" }]);
+      pushMsg({ role: "assistant", content: cleaned || "(nessuna risposta)" });
 
       if (j.lead) setLead(j.lead as Lead);
     } catch {
-      setMessages((m) => [
-        ...m,
-        {
-          role: "assistant",
-          content:
-            "Si è verificato un errore temporaneo. Riprova tra poco oppure chiama l’800 00 24 24.",
-        },
-      ]);
+      pushMsg({
+        role: "assistant",
+        content: "Si è verificato un errore temporaneo. Riprova tra poco oppure chiama l’800 00 24 24.",
+      });
     } finally {
       setLoading(false);
     }
@@ -114,7 +115,7 @@ export default function ChatPage() {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-chat-key": CHAT_KEY, // <-- E QUI
+          "x-chat-key": CHAT_KEY,
         },
         body: JSON.stringify({
           source: "chat",
@@ -212,14 +213,11 @@ export default function ChatPage() {
               onSend={(t) => sendText(t)}
               onImagePicked={(url) => {
                 setImageUrl(url); // conservala per i turni successivi
-                setMessages((m) => [
-                  ...m,
-                  {
-                    role: "assistant",
-                    content:
-                      "📎 Foto allegata. Se vuoi una stima di prezzo provo a valutarla dalla foto; altrimenti procedo senza.",
-                  },
-                ]);
+                pushMsg({
+                  role: "assistant",
+                  content:
+                    "📎 Foto allegata. Se vuoi una stima di prezzo provo a valutarla dalla foto; altrimenti procedo senza.",
+                });
               }}
             />
 
@@ -278,3 +276,4 @@ export default function ChatPage() {
     </main>
   );
 }
+

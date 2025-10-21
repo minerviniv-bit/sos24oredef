@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseService } from "@/lib/supabase/server";
-import { VAssignmentsPublic } from "@/lib/supabase/types";
+import { VAssignmentsPublic } from "@/lib/supabase/db-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -60,3 +60,4 @@ export async function GET(req: Request) {
     );
   }
 }
+

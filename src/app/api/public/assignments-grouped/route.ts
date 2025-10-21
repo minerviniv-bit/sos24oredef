@@ -1,28 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAnon } from "@/lib/supabase/server"; // o client se hai già wrapper
+import { NextResponse } from "next/server";
+import { supabaseAnon } from "@/lib/supabase/client";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const service = searchParams.get("service");
-  const city = searchParams.get("city");
+export const dynamic = "force-dynamic";
 
-  if (!service || !city) {
-    return NextResponse.json(
-      { error: "service and city are required" },
-      { status: 400 }
-    );
-  }
+export async function GET() {
+  const supabase = supabaseAnon(); // ✅ FACTORY
 
-  const supabase = supabaseAnon();
   const { data, error } = await supabase
     .from("v_assignments_grouped")
-    .select("*")
-    .eq("service", service)
-    .eq("city", city);
+    .select("*");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ service, city, data });
+  return NextResponse.json(data ?? [], {
+    headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" },
+  });
 }
+

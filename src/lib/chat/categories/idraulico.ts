@@ -1,6 +1,5 @@
 // src/lib/chat/prompts/categories/idraulico.ts
-import type { CategoryModule } from "./common";
-
+import type { CategoryModule } from "../prompts/common";
 export const IDRAULICO: CategoryModule = {
   name: "idraulico",
   prompt: `
@@ -19,3 +18,4 @@ IDRAULICO — Vision:
 - Se vedi rubinetti/valvole, indica dove provare a chiudere l’acqua (senza istruzioni complesse).
 `.trim(),
 };
+

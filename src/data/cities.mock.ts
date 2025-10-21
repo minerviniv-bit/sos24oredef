@@ -6,3 +6,4 @@ export const MOCK_CITIES: Record<string, City[]> = {
   elettricista: [{ slug: "roma", label: "Roma", sponsor: null }],
   spurgo:    [{ slug: "roma", label: "Roma", sponsor: null }],
 };
+

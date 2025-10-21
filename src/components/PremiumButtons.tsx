@@ -43,3 +43,4 @@ export function ChatAIPremiumButton({ children }: { children: React.ReactNode })
     </Link>
   );
 }
+

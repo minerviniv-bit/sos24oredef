@@ -1,4 +1,4 @@
-// src/app/[service]/[city]/page.tsx
+﻿// src/app/[service]/[city]/page.tsx
 import type { Metadata } from "next";
 import CityLanding from "@/app/_shared/CityLanding";
 import { mascotsByService, cityCopy } from "@/app/_shared/serviceCityConfig";
