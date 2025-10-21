@@ -5,9 +5,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Database } from "./types";
 
-/** =========================
- *  SSR anon (browser/SSR) – usa le public env
- *  ========================= */
+/** ========= SSR anon (browser/SSR) ========= */
 export async function createClientSSR(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
 
@@ -30,38 +28,36 @@ export async function createClientSSR(): Promise<SupabaseClient<Database>> {
   );
 }
 
-/** =========================
- *  Service client (API/backend) – fallback automatico
- *  ========================= */
+/** ========= Service client (API/backend) con fallback ========= */
 let _svc: SupabaseClient<Database> | null = null;
 
 export function supabaseService(): SupabaseClient<Database> {
   if (_svc) return _svc;
 
-  // Preferisci le server env; se mancano, fai fallback alle public (così non “fetch failed”)
   const url =
     process.env.SUPABASE_URL ||
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     "";
 
   const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || // ideale
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || // fallback read-only
-    "";
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||        // preferito
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""; // fallback read-only
 
   if (!url || !key) {
+    // Log utile in prod se mancano ENV
     console.error("[supabaseService] MISSING ENV", {
-      has_url: !!url,
-      has_service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-      has_public_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      has_public_anon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      has_url: Boolean(url),
+      has_service_key: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+      has_public_url: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
+      has_public_anon: Boolean(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     });
   }
 
+  // NIENTE any e niente override del fetch: usa quello globale
   _svc = createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { fetch: fetch as any },
   });
+
   return _svc;
 }
 
