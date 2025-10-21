@@ -5,10 +5,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Database } from "./types";
 
-/**
- * Client SSR (anon key) con cookies gestiti da Next 15.
- * cookies() ora è async, quindi serve await.
- */
+/** =========================
+ *  SSR anon (browser/SSR) – usa le public env
+ *  ========================= */
 export async function createClientSSR(): Promise<SupabaseClient<Database>> {
   const cookieStore = await cookies();
 
@@ -21,42 +20,50 @@ export async function createClientSSR(): Promise<SupabaseClient<Database>> {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options?: CookieOptions) {
-          try {
-            cookieStore.set({ name, value, ...options });
-          } catch {
-            // Ignora se eseguito lato server puro
-          }
+          try { cookieStore.set({ name, value, ...options }); } catch {}
         },
         remove(name: string, options?: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: "", ...options });
-          } catch {
-            // Ignora se eseguito lato server puro
-          }
+          try { cookieStore.set({ name, value: "", ...options }); } catch {}
         },
       },
     }
   );
 }
 
-/**
- * Client con Service Role Key — per API route e backend.
- * Usa la chiave privata (SUPABASE_SERVICE_ROLE_KEY) e non persiste la sessione.
- */
+/** =========================
+ *  Service client (API/backend) – fallback automatico
+ *  ========================= */
+let _svc: SupabaseClient<Database> | null = null;
+
 export function supabaseService(): SupabaseClient<Database> {
-  return createClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: { persistSession: false },
-      global: { fetch: fetch.bind(globalThis) },
-    }
-  );
+  if (_svc) return _svc;
+
+  // Preferisci le server env; se mancano, fai fallback alle public (così non “fetch failed”)
+  const url =
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "";
+
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || // ideale
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || // fallback read-only
+    "";
+
+  if (!url || !key) {
+    console.error("[supabaseService] MISSING ENV", {
+      has_url: !!url,
+      has_service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      has_public_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      has_public_anon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    });
+  }
+
+  _svc = createClient<Database>(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: fetch as any },
+  });
+  return _svc;
 }
 
-/**
- * Alias legacy — compatibilità col vecchio codice.
- * È una Promise ora, quindi: const supa = await supabaseAnon();
- */
+/** Alias legacy */
 export const supabaseAnon = createClientSSR;
-
