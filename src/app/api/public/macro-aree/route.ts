@@ -20,10 +20,20 @@ const PUBLIC_ORDER = ["centro-prati", "nord", "est", "sud", "ovest", "litorale"]
 
 type StatRow = {
   city: string;
-  slug: string;           // slug DB (es. "roma-centro")
+  slug: string;
   title: string | null;
   description: string | null;
   areas_count: number;
+};
+
+type PopularItem = { area_slug: string; label: string };
+
+type OutItem = {
+  slug: string;
+  title: string;
+  description: string | null;
+  areas_count: number;
+  popular: PopularItem[];
 };
 
 export async function GET(req: Request) {
@@ -33,21 +43,24 @@ export async function GET(req: Request) {
   try {
     const sb = supabaseService();
 
-    // 1) prendiamo tutto dalla VIEW (è già aggregata e coerente col DB)
     const { data, error } = await sb
       .from("v_macro_areas_stats")
       .select("city,slug,title,description,areas_count")
       .ilike("city", CITY);
 
     if (error) {
-      if (diag) return NextResponse.json({ ok:false, where:"supabase", error: error.message }, { status: 500 });
-      return NextResponse.json([], { status: 200 });
+      if (diag) {
+        return NextResponse.json(
+          { ok: false as const, where: "supabase" as const, error: error.message },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json<OutItem[]>([], { status: 200 });
     }
 
-    const rows = (data ?? []) as StatRow[];
+    const rows: StatRow[] = (data ?? []) as StatRow[];
 
-    // 2) mappiamo agli slug pubblici e titoli che vuoi sul sito
-    const byPub: Record<string, { slug:string; title:string; description:string|null; areas_count:number; popular:any[] }> = {};
+    const byPub: Record<string, OutItem> = {};
 
     for (const r of rows) {
       const map = DB_TO_PUBLIC[r.slug];
@@ -58,17 +71,15 @@ export async function GET(req: Request) {
         title: map.title,
         description: r.description ?? null,
         areas_count: r.areas_count ?? 0,
-        // se vuoi i "popular" veri, li calcoli in un secondo step; per ora lista vuota coerente con UI
-        popular: [],
+        popular: [] as PopularItem[], // tipato, niente any
       };
     }
 
-    // 3) ordiniamo come da PUBLIC_ORDER ed usciamo
-    const out = PUBLIC_ORDER.filter((s) => !!byPub[s]).map((s) => byPub[s]);
+    const out: OutItem[] = PUBLIC_ORDER.filter(s => !!byPub[s]).map(s => byPub[s]);
 
     if (diag) {
       return NextResponse.json({
-        ok: true,
+        ok: true as const,
         count: out.length,
         slugs_db: rows.map(r => r.slug),
         slugs_pub: out.map(o => o.slug),
@@ -79,7 +90,13 @@ export async function GET(req: Request) {
       headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" },
     });
   } catch (e) {
-    if (diag) return NextResponse.json({ ok:false, where:"route", error: String(e) }, { status: 500 });
-    return NextResponse.json([], { status: 200 });
+    const msg = e instanceof Error ? e.message : String(e);
+    if (diag) {
+      return NextResponse.json(
+        { ok: false as const, where: "route" as const, error: msg },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json<OutItem[]>([], { status: 200 });
   }
 }
