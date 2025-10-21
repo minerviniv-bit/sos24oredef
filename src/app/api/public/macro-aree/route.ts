@@ -18,15 +18,15 @@ const DB_TO_PUBLIC: Record<string, { pub: string; title: string }> = {
 
 const PUBLIC_ORDER = ["centro-prati", "nord", "est", "sud", "ovest", "litorale"];
 
+type PopularItem = { area_slug: string; label: string };
+
 type StatRow = {
   city: string;
   slug: string;
   title: string | null;
-  description: string | null;
   areas_count: number;
+  popular: PopularItem[] | null;
 };
-
-type PopularItem = { area_slug: string; label: string };
 
 type OutItem = {
   slug: string;
@@ -43,19 +43,15 @@ export async function GET(req: Request) {
   try {
     const sb = supabaseService();
 
+    // ❗️Niente generics in .from<...> — la tua versione li vuole in altro formato
     const { data, error } = await sb
       .from("v_macro_areas_stats")
-      .select("city,slug,title,description,areas_count")
+      .select("city,slug,title,areas_count,popular")
       .ilike("city", CITY);
 
     if (error) {
-      if (diag) {
-        return NextResponse.json(
-          { ok: false as const, where: "supabase" as const, error: error.message },
-          { status: 500 }
-        );
-      }
-      return NextResponse.json<OutItem[]>([], { status: 200 });
+      const payload = { ok: false as const, where: "supabase" as const, error: error.message };
+      return NextResponse.json(payload, { status: diag ? 500 : 200 });
     }
 
     const rows: StatRow[] = (data ?? []) as StatRow[];
@@ -68,21 +64,21 @@ export async function GET(req: Request) {
 
       byPub[map.pub] = {
         slug: map.pub,
-        title: map.title,
-        description: r.description ?? null,
+        title: map.title ?? map.title ?? "",
+        description: null, // la view non ha description
         areas_count: r.areas_count ?? 0,
-        popular: [] as PopularItem[], // tipato, niente any
+        popular: Array.isArray(r.popular) ? r.popular : [],
       };
     }
 
-    const out: OutItem[] = PUBLIC_ORDER.filter(s => !!byPub[s]).map(s => byPub[s]);
+    const out: OutItem[] = PUBLIC_ORDER.filter((s) => !!byPub[s]).map((s) => byPub[s]);
 
     if (diag) {
       return NextResponse.json({
         ok: true as const,
         count: out.length,
-        slugs_db: rows.map(r => r.slug),
-        slugs_pub: out.map(o => o.slug),
+        slugs_db: rows.map((r) => r.slug),
+        slugs_pub: out.map((o) => o.slug),
       });
     }
 
@@ -91,12 +87,7 @@ export async function GET(req: Request) {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    if (diag) {
-      return NextResponse.json(
-        { ok: false as const, where: "route" as const, error: msg },
-        { status: 500 }
-      );
-    }
-    return NextResponse.json<OutItem[]>([], { status: 200 });
+    const payload = { ok: false as const, where: "route" as const, error: msg };
+    return NextResponse.json(payload, { status: diag ? 500 : 200 });
   }
 }
