@@ -24,6 +24,12 @@ export default function DistrictPageShell({
   whatsappHref,
   seoBottomHtml,
   faqs,
+
+  // opzionali per non rompere build quando passati dal chiamante
+  piva,
+  rating,
+  interventiMese,
+  telefonoCliente,
 }: {
   mascotSrc: string;
   serviceLabel: string;
@@ -41,6 +47,12 @@ export default function DistrictPageShell({
   whatsappHref?: string;
   seoBottomHtml?: string;
   faqs?: FaqItem[];
+
+  // extra opzionali
+  piva?: string | null;
+  rating?: number | null;
+  interventiMese?: number | null;
+  telefonoCliente?: string | null;
 }) {
   const logo = client.logoUrl || "/logos/logo.webp";
 
@@ -51,12 +63,13 @@ export default function DistrictPageShell({
         <div className="mx-auto max-w-6xl px-4 grid md:grid-cols-3 gap-6">
           {/* Logo cliente */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-3 grid place-items-center overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={logo}
               alt={client.name}
+              width={320}
+              height={192}
               className="object-contain w-full h-48 p-2 rounded-xl bg-black/10"
-              loading="lazy"
+              priority
             />
           </div>
 
@@ -67,14 +80,17 @@ export default function DistrictPageShell({
             </div>
             <h1 className="text-2xl md:text-3xl font-semibold mt-1">Pronto Intervento in zona</h1>
             <p className="mt-2 text-white/80">
-              {heroSubtitle ||
+              {heroSubtitle ??
                 `Interventi H24 a ${districtLabel}. Perdite d’acqua, tubi rotti, WC otturati, allagamenti.`}
             </p>
 
             <div className="mt-4 flex items-center justify-between">
               <div>
                 <div className="text-xs text-white/60">Numero Verde</div>
-                <a href={`tel:${numeroVerde.replace(/\s/g, "")}`} className="text-2xl font-extrabold tracking-tight">
+                <a
+                  href={`tel:${numeroVerde.replace(/\s/g, "")}`}
+                  className="text-2xl font-extrabold tracking-tight"
+                >
                   {numeroVerde}
                 </a>
               </div>
@@ -89,6 +105,32 @@ export default function DistrictPageShell({
                 </a>
               )}
             </div>
+
+            {/* micro-strip fiducia (render solo se esistono dati) */}
+            {(piva || typeof rating === "number" || typeof interventiMese === "number") && (
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                {piva && (
+                  <span className="px-2 py-1 rounded-lg bg-white/10 border border-white/15">
+                    P.IVA verificata
+                  </span>
+                )}
+                {typeof rating === "number" && (
+                  <span className="px-2 py-1 rounded-lg bg-white/10 border border-white/15">
+                    Rating {rating.toFixed(1)} / 5
+                  </span>
+                )}
+                {typeof interventiMese === "number" && (
+                  <span className="px-2 py-1 rounded-lg bg-white/10 border border-white/15">
+                    Interventi mese: {interventiMese}
+                  </span>
+                )}
+                {telefonoCliente && (
+                  <span className="px-2 py-1 rounded-lg bg-white/10 border border-white/15">
+                    Tel. {telefonoCliente}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -133,17 +175,17 @@ export default function DistrictPageShell({
             </div>
 
             {/* SEO in fondo */}
-            {seoBottomHtml ? (
+            {seoBottomHtml && (
               <div
                 className="rounded-2xl border border-white/10 bg-white/5 p-6 prose prose-invert max-w-none"
                 dangerouslySetInnerHTML={{ __html: seoBottomHtml }}
               />
-            ) : null}
+            )}
           </div>
 
           {/* Colonna destra */}
           <div className="space-y-6">
-            {faqs && faqs.length > 0 ? (
+            {faqs && faqs.length > 0 && (
               <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
                 <h3 className="text-lg font-semibold mb-3">FAQ</h3>
                 <div className="divide-y divide-white/10">
@@ -155,7 +197,7 @@ export default function DistrictPageShell({
                   ))}
                 </div>
               </div>
-            ) : null}
+            )}
 
             {/* Mappa reale della zona */}
             <MapBox address={`${districtLabel}, ${cityLabel}, Italia`} />

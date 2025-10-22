@@ -81,8 +81,6 @@ export function buildQuartiereHandlers(service: string) {
     const interventiMese = (ass as { interventi_mese?: number | null } | null)?.interventi_mese ?? null;
     const telefonoCliente = (ass as { telefono?: string | null } | null)?.telefono ?? null;
 
-    const galleryImages: string[] = [];
-
     return (
       <>
         {jsonLd && (
@@ -123,7 +121,6 @@ export function buildQuartiereHandlers(service: string) {
           rating={rating}
           interventiMese={interventiMese}
           telefonoCliente={telefonoCliente}
-          galleryImages={galleryImages}
           seoBottomHtml={seoBottomHtml}
           faqs={faqs}
         />
