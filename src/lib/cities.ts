@@ -1,7 +1,6 @@
 // src/lib/cities.ts
 import "server-only";
 import { createClientSSR } from "@/lib/supabase/server";
-import type { Tables } from "@/lib/supabase/db-types";
 
 export type CityRow = {
   id: string;
@@ -14,7 +13,7 @@ export type CityRow = {
 };
 
 export async function getCities(): Promise<CityRow[]> {
-  const supa = await createClientSSR(); // <-- QUI serve await
+  const supa = await createClientSSR(); // <-- mantiene await
 
   const { data, error } = await supa
     .from("cities")
@@ -30,7 +29,7 @@ export async function getCities(): Promise<CityRow[]> {
 }
 
 export async function getCityBySlug(slug: string): Promise<CityRow | null> {
-  const supa = await createClientSSR(); // <-- QUI serve await
+  const supa = await createClientSSR(); // <-- mantiene await
 
   const { data, error } = await supa
     .from("cities")

@@ -1,0 +1,257 @@
+Elenco del percorso delle cartelle
+Numero di serie del volume: 74A3-13AF
+C:\UTENTI\USER\SOS24OREDEF\SRC\APP
+|   favicon.ico
+|   globals.css
+|   layout.tsx
+|   page.tsx
+|   
++---(admin)
+|   \---admin
+|       |   AdminNav.tsx
+|       |   CustomSelect.tsx
+|       |   layout.tsx
+|       |   page.tsx
+|       |   
+|       +---administration
+|       |       page.tsx
+|       |       
+|       +---assignments
+|       |       page.tsx
+|       |       
+|       +---clients
+|       |       page.tsx
+|       |       
+|       \---seo
+|               page.tsx
+|               
++---api
+|   +---admin
+|   |   +---assign
+|   |   |   |   route.ts
+|   |   |   |   
+|   |   |   +---bulk
+|   |   |   |       route.ts
+|   |   |   |       
+|   |   |   \---zones
+|   |   |           route.ts
+|   |   |           
+|   |   +---by-client
+|   |   |   |   route.ts
+|   |   |   |   
+|   |   |   \---list
+|   |   |           route.ts
+|   |   |           
+|   |   +---clients
+|   |   |       route.ts
+|   |   |       
+|   |   +---orders
+|   |   |   |   route.ts
+|   |   |   |   
+|   |   |   \---preview
+|   |   |           InvoicePreview.tsx
+|   |   |           route.ts
+|   |   |           
+|   |   +---seo
+|   |   |   +---context
+|   |   |   |       route.ts
+|   |   |   |       
+|   |   |   +---generate
+|   |   |   |   |   route.ts
+|   |   |   |   |   
+|   |   |   |   \---stream
+|   |   |   |           route.ts
+|   |   |   |           
+|   |   |   +---get
+|   |   |   |       route.ts
+|   |   |   |       
+|   |   |   +---load
+|   |   |   |       route.ts
+|   |   |   |       
+|   |   |   +---publish
+|   |   |   |       route.ts
+|   |   |   |       
+|   |   |   \---save
+|   |   |           route.ts
+|   |   |           
+|   |   +---unassign
+|   |   |   |   route.ts
+|   |   |   |   
+|   |   |   \---bulk
+|   |   |           route.ts
+|   |   |           
+|   |   \---upload
+|   |           route.ts
+|   |           
+|   +---chat
+|   |   |   route.ts
+|   |   |   
+|   |   \---test
+|   |           route.ts
+|   |           
+|   +---lead
+|   |       route.ts
+|   |       
+|   +---ping
+|   |       route.ts
+|   |       
+|   +---public
+|   |   +---areas
+|   |   |       route.ts
+|   |   |       
+|   |   +---assignments
+|   |   |       route.ts
+|   |   |       
+|   |   +---assignments-grouped
+|   |   |       route.ts
+|   |   |       
+|   |   +---clients
+|   |   |       route.ts
+|   |   |       
+|   |   +---macro-aree
+|   |   |       route.ts
+|   |   |       
+|   |   \---seo
+|   |           route.ts
+|   |           
+|   +---revalidate
+|   |       route.ts
+|   |       
+|   \---upload
+|           route.ts
+|           
++---assistenza-stradale
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---caldaie
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---chat
+|       ChatInput.tsx
+|       ChatLeadPanel.tsx
+|       ChatMessage.tsx
+|       page.tsx
+|       
++---contatti
+|       page.tsx
+|       
++---cookie
+|       CookieClient.tsx
+|       CookieManager.tsx
+|       page.tsx
+|       
++---disinfestazioni
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---elettricista
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---fabbro
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---idraulico
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---Nuova cartella
++---privacy
+|       page.tsx
+|       
++---privacy-chat
+|   |   page.tsx
+|   |   
+|   \---en
+|           page.tsx
+|           
++---revalidate
+|       route.ts
+|       
++---spurgo
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---termini
+|       page.tsx
+|       
++---vetraio
+|   |   page.tsx
+|   |   
+|   \---roma
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---[service]
+|   \---[city]
+|       |   page.tsx
+|       |   
+|       \---[quartiere]
+|               page.tsx
+|               
++---_diag
+|   \---supabase
+|           route.ts
+|           
+\---_shared
+    |   CityLanding.tsx
+    |   cityPage.tsx
+    |   dataFetch.ts
+    |   DistrictPageShell.tsx
+    |   DistrictPageShellold.tsx
+    |   Footer.tsx
+    |   GalleryLite.tsx
+    |   Header.tsx
+    |   MapBox.tsx
+    |   quartierePage.tsx
+    |   quartierePageold.tsx
+    |   serviceCityConfig.ts
+    |   ServiceLanding.tsx
+    |   serviceNavConfig.ts
+    |   servicePage.tsx
+    |   StickyCta.tsx
+    |   _shareddataFetch.ts
+    |   
+    \---legal
+            LegalPageShell.tsx
+            
