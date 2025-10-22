@@ -31,17 +31,23 @@ type Group = {
 };
 
 /**
- * GET /api/public/assignments?city=roma&service=idraulico&grouped=1
+ * GET /api/public/assignments?city=roma&service=idraulico&area=prati&grouped=1
  *
- * - city: obbligatorio (usa lowercase)
- * - service: facoltativo (se presente, INCLUDE anche le zone libere: service IS NULL)
- * - grouped=1: raggruppa per macro (macro_slug → areas[])
+ * - city (obbligatorio, lowercase)
+ * - service (facoltativo). Se presente: include anche le zone libere (service IS NULL)
+ * - area/area_slug (facoltativo): filtra per area specifica
+ * - grouped=1 (facoltativo): raggruppa per macro (macro_slug → areas[])
  */
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const city = (url.searchParams.get("city") || "").toLowerCase().trim();
     const service = (url.searchParams.get("service") || "").toLowerCase().trim();
+    // accetto sia ?area= che ?area_slug=
+    const area =
+      (url.searchParams.get("area_slug") || url.searchParams.get("area") || "")
+        .toLowerCase()
+        .trim();
     const grouped = url.searchParams.get("grouped") === "1";
 
     if (!city) {
@@ -60,9 +66,13 @@ export async function GET(req: Request) {
       .order("sort_order", { ascending: true })
       .order("area_label", { ascending: true });
 
+    // filtro area se presente (NB: in DB è area_slug)
+    if (area) {
+      qb = qb.eq("area_slug", area);
+    }
+
     // Se filtro per service, includo anche le zone libere (service IS NULL)
     if (service) {
-      // PostgREST or() accetta questa sintassi; codifico il valore per sicurezza
       const s = encodeURIComponent(service);
       qb = qb.or(`service.eq.${s},service.is.null`);
     }
@@ -76,9 +86,10 @@ export async function GET(req: Request) {
     const rows = Array.isArray(data) ? (data as FlatRow[]) : [];
 
     if (!grouped) {
-      return NextResponse.json({ data: rows }, {
-        headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=120" },
-      });
+      return NextResponse.json(
+        { data: rows },
+        { headers: { "Cache-Control": "s-maxage=30, stale-while-revalidate=120" } }
+      );
     }
 
     // Raggruppo per macro
@@ -113,4 +124,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-
