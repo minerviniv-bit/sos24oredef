@@ -4,6 +4,7 @@ import DistrictPageShell from "./DistrictPageShell";
 import { baseUrl, fetchSeo, fetchAssignment, ucSlug, CITY, NUMERO_VERDE } from "./dataFetch";
 import { mascotsByService } from "@/app/_shared/serviceCityConfig";
 
+// Mappa etichetta per servizio (H1/hero)
 function labelFromService(svc: string) {
   switch (svc) {
     case "idraulico": return "Idraulico H24";
@@ -18,6 +19,7 @@ function labelFromService(svc: string) {
   }
 }
 
+// Hardening minimal: se mai mancassero CTA/disclaimer nel body
 function ensureSeoReady(html: string, numeroVerde: string) {
   let out = html || "";
   if (!/800\s*00\s*24\s*24/.test(out)) {
@@ -30,6 +32,7 @@ function ensureSeoReady(html: string, numeroVerde: string) {
 }
 
 export function buildQuartiereHandlers(service: string) {
+  // ====== Metadata SEO ======
   async function generateMetadata({ params }: { params: { quartiere: string } }): Promise<Metadata> {
     const area = params.quartiere;
     const seo = await fetchSeo(service, CITY, area);
@@ -48,6 +51,7 @@ export function buildQuartiereHandlers(service: string) {
     };
   }
 
+  // ====== Pagina Quartiere ======
   async function Page({ params }: { params: { quartiere: string } }) {
     const area = params.quartiere;
 
@@ -66,25 +70,24 @@ export function buildQuartiereHandlers(service: string) {
       ? { name: ass.client_name || "Partner", logoUrl: ass.logo_url || undefined, isFallback: false }
       : { name: "SOS24ORE.it", isFallback: true as const };
 
+    // JSON-LD in <head> se presente dal pannello
     const jsonLd = seo?.json_ld || null;
 
-    const companySeoHtml = `<p>Interventi ${serviceLabel.toLowerCase()} a ${districtLabel} (Roma). Diagnosi rapida, preventivo chiaro prima dell’uscita e operatività H24 in zona.</p>`;
+    // Testo breve per la card "Scheda azienda" (manteniamo un riassunto corto)
+    const companySeoHtml =
+      `<p>Interventi ${serviceLabel.toLowerCase()} a ${districtLabel} (Roma). Diagnosi rapida, preventivo chiaro prima dell’uscita e operatività H24 in zona.</p>`;
 
+    // Testo lungo SEO pubblicato (stampa IN FONDO)
     const seoBottomHtml = ensureSeoReady(seo?.body_html || "", NUMERO_VERDE);
     const faqs = Array.isArray(seo?.faqs) ? seo.faqs : [];
 
-    const s = service as ServiceKey;
-    const mascotSrc = mascotsByService[s] ?? "/mascotte/capitansos-mappa.webp";
-
-    const piva = (ass as { piva?: string | null } | null)?.piva ?? null;
-    const rating = (ass as { rating?: number | null } | null)?.rating ?? null;
-    const interventiMese = (ass as { interventi_mese?: number | null } | null)?.interventi_mese ?? null;
-    const telefonoCliente = (ass as { telefono?: string | null } | null)?.telefono ?? null;
-
-    const galleryImages: string[] = [];
+    /// mascotte calcolata lato server
+const s = service as ServiceKey;
+const mascotSrc = mascotsByService[s] ?? "/mascotte/capitansos-mappa.webp";
 
     return (
       <>
+        {/* JSON-LD se presente dal pannello */}
         {jsonLd && (
           <script
             type="application/ld+json"
@@ -92,6 +95,7 @@ export function buildQuartiereHandlers(service: string) {
           />
         )}
 
+        {/* Tutta la pagina, con SEO e FAQ in fondo */}
         <DistrictPageShell
           mascotSrc={mascotSrc}
           serviceLabel={serviceLabel}
@@ -119,11 +123,8 @@ export function buildQuartiereHandlers(service: string) {
           ]}
           numeroVerde={NUMERO_VERDE}
           whatsappHref={ass?.whatsapp ? `https://wa.me/${String(ass.whatsapp).replace(/\D/g, "")}` : undefined}
-          piva={piva}
-          rating={rating}
-          interventiMese={interventiMese}
-          telefonoCliente={telefonoCliente}
-          galleryImages={galleryImages}
+
+          /* ⬇️ NUOVO: blocco SEO in fondo + FAQ */
           seoBottomHtml={seoBottomHtml}
           faqs={faqs}
         />
@@ -134,4 +135,6 @@ export function buildQuartiereHandlers(service: string) {
   return { Page, generateMetadata };
 }
 
+// Consigliato: completamente dinamico
 export const dynamic = "force-dynamic";
+

@@ -1,306 +1,167 @@
-// src/app/_shared/DistrictPageShell.tsx
-// Server Component: niente "use client"
+"use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import MapBox from "./MapBox";
 
-/* =========================
-   TYPES
-   ========================= */
-export type DistrictPageProps = {
-  mascotSrc: string;             // ✅ mascotte decisa lato server
-  serviceLabel: string;          // es. "Idraulico H24"
-  cityLabel: string;             // es. "Roma"
-  districtLabel: string;         // es. "Prati"
-  heroSubtitle?: string;
-  sponsorNote?: string;
-  tags?: string[];
-  client?: { name: string; logoUrl?: string; isFallback?: boolean } | null;
+type ClientLite = { name: string; logoUrl?: string; isFallback?: boolean };
+type InfoItem   = { label: string; value: string };
+type FaqItem    = { q: string; a: string };
 
-  // ⬇️ Breve testo scheda azienda (rimane nella card in alto, COME PRIMA)
-  companySeoHtml?: string;       // HTML breve, descrittivo (non il malloppone SEO)
-
-  nearby?: { label: string; href: string }[];
-  servicesOffered?: string[];
-  infoRapide?: { label: string; value: string }[];
-  numeroVerde?: string;          // es. "800 00 24 24"
-  whatsappHref?: string;         // es. "https://wa.me/39..."
-
-  // ⬇️ NUOVO: Blocco SEO discorsivo IN FONDO alla pagina
-  seoBottomHtml?: string;        // HTML lungo generato/pubblicato da admin
-  faqs?: { q: string; a: string }[]; // FAQ in fondo
-};
-
-/* =========================
-   COMPONENT
-   ========================= */
 export default function DistrictPageShell({
-  mascotSrc,
+  mascotSrc,                 // compatibilità
   serviceLabel,
   cityLabel,
   districtLabel,
   heroSubtitle,
-  sponsorNote = "Disponibile per sponsorizzazione",
-  tags = [],
+  sponsorNote,               // compatibilità
+  tags,                      // compatibilità
   client,
-  companySeoHtml = "",
-  nearby = [],
-  servicesOffered = [],
-  infoRapide = [],
-  numeroVerde = "800 00 24 24",
+  companySeoHtml,
+  nearby,                    // compatibilità
+  servicesOffered,
+  infoRapide,
+  numeroVerde,
   whatsappHref,
-
-  // ⬇️ nuovi
   seoBottomHtml,
   faqs,
-}: DistrictPageProps) {
-  // Logo coerente: usiamo sempre <Image> (anche per URL remoti) + unoptimized
-  const safeLogo = client?.isFallback
-    ? "/logos/logo.webp"
-    : (client?.logoUrl || "/logos/logo.webp");
+}: {
+  mascotSrc: string;
+  serviceLabel: string;
+  cityLabel: string;
+  districtLabel: string;
+  heroSubtitle?: string;
+  sponsorNote?: string;
+  tags?: string[];
+  client: ClientLite;
+  companySeoHtml: string;
+  nearby: Array<{ label: string; href?: string }>;
+  servicesOffered: string[];
+  infoRapide: InfoItem[];
+  numeroVerde: string;
+  whatsappHref?: string;
+  seoBottomHtml?: string;
+  faqs?: FaqItem[];
+}) {
+  const logo = client.logoUrl || "/logos/logo.webp";
 
   return (
-    <div className="bg-[#030814] text-neutral-200 min-h-screen">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        {/* ========== BREADCRUMB ========== */}
-        <nav className="text-sm text-neutral-400 mb-4" aria-label="breadcrumb">
-          <ul className="flex items-center gap-2">
-            <li><Link href="/" className="hover:text-neutral-200">Home</Link></li>
-            <li aria-hidden>›</li>
-            <li>
-              <Link href={`/${slug(serviceLabel.split(" ")[0])}`} className="hover:text-neutral-200">
-                {serviceLabel.split(" ")[0]}
-              </Link>
-            </li>
-            <li aria-hidden>›</li>
-            <li>
-              <Link href={`/${slug(serviceLabel.split(" ")[0])}/${slug(cityLabel)}`} className="hover:text-neutral-200">
-                {cityLabel}
-              </Link>
-            </li>
-            <li aria-hidden>›</li>
-            <li className="text-neutral-300">{districtLabel}</li>
-          </ul>
-        </nav>
+    <main className="min-h-screen bg-[#0c1320] text-white">
+      {/* HERO */}
+      <section className="py-10">
+        <div className="mx-auto max-w-6xl px-4 grid md:grid-cols-3 gap-6">
+          {/* Logo cliente */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3 grid place-items-center overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logo}
+              alt={client.name}
+              className="object-contain w-full h-48 p-2 rounded-xl bg-black/10"
+              loading="lazy"
+            />
+          </div>
 
-        {/* ========== HEADER / HERO ========== */}
-        <div className="flex items-start justify-between gap-8">
-          <div className="flex-1">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="text-xs px-2 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">
-                {sponsorNote}
-              </span>
+          {/* Testi + NV + WhatsApp */}
+          <div className="md:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6">
+            <div className="text-sm uppercase tracking-wide text-white/70">
+              {serviceLabel} a {districtLabel} – {cityLabel}
             </div>
+            <h1 className="text-2xl md:text-3xl font-semibold mt-1">Pronto Intervento in zona</h1>
+            <p className="mt-2 text-white/80">
+              {heroSubtitle ||
+                `Interventi H24 a ${districtLabel}. Perdite d’acqua, tubi rotti, WC otturati, allagamenti.`}
+            </p>
 
-            <h1 className="text-3xl sm:text-4xl font-semibold">
-              {serviceLabel} {districtLabel} – {cityLabel}
-            </h1>
-
-            {heroSubtitle && (
-              <p className="mt-2 text-neutral-300">{heroSubtitle}</p>
-            )}
-
-            {tags.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {tags.map((t) => (
-                  <span
-                    key={t}
-                    className="text-xs px-3 py-1 rounded-full bg-neutral-800 border border-neutral-700"
-                  >
-                    {t}
-                  </span>
-                ))}
+            <div className="mt-4 flex items-center justify-between">
+              <div>
+                <div className="text-xs text-white/60">Numero Verde</div>
+                <a href={`tel:${numeroVerde.replace(/\s/g, "")}`} className="text-2xl font-extrabold tracking-tight">
+                  {numeroVerde}
+                </a>
               </div>
-            )}
-
-            <div className="mt-5 flex gap-3">
-              <a
-                href={`tel:${numeroVerde.replace(/\s+/g, "")}`}
-                className="px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700"
-                aria-label={`Chiama il Numero Verde ${numeroVerde}`}
-              >
-                Chiama {numeroVerde}
-              </a>
-
               {whatsappHref && (
                 <a
                   href={whatsappHref}
+                  className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-sm hover:bg-emerald-500/20"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-full bg-yellow-500 text-black hover:bg-yellow-400"
                 >
-                  Chatta con noi
+                  WhatsApp
                 </a>
               )}
             </div>
           </div>
-
-          {/* ✅ Mascotte: struttura fissa = niente hydration mismatch */}
-          <div className="hidden sm:block w-64 aspect-[1/1.1] relative">
-            <Image
-              src={mascotSrc}
-              alt="Capitan SOS"
-              fill
-              className="object-contain"
-              priority
-              unoptimized
-            />
-          </div>
         </div>
+      </section>
 
-        {/* ========== TOP CARDS ========== */}
-        <div className="grid md:grid-cols-2 gap-6 mt-8">
-          {/* Partner / Sponsor */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
-            <div className="text-neutral-300 text-sm mb-2">Partner</div>
-            <div className="h-28 flex items-center justify-center">
-              <Image
-                src={safeLogo}
-                alt={client?.name || "Logo partner"}
-                width={240}
-                height={72}
-                className="mx-auto"
-                priority
-                unoptimized
-              />
-            </div>
-          </div>
-
-          {/* Numero Verde */}
-          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
-            <div className="text-xl font-semibold mb-3">
-              {serviceLabel.split(" ")[0]} a {districtLabel}
-            </div>
-            <div className="rounded-xl border border-emerald-700/40 bg-neutral-950 p-4">
-              <div className="text-sm text-emerald-400 mb-1">Numero Verde</div>
-              <div className="text-2xl font-semibold tracking-wider">
-                {numeroVerde}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ========== BODY (top) ========== */}
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
-          {/* Colonna principale */}
+      {/* BODY */}
+      <section className="pb-24">
+        <div className="mx-auto max-w-6xl px-4 grid md:grid-cols-3 gap-6">
+          {/* Colonna sinistra */}
           <div className="md:col-span-2 space-y-6">
             {/* Scheda azienda */}
-            <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
-              <h2 className="text-lg font-semibold mb-3">Scheda Azienda</h2>
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h2 className="text-lg font-semibold">Scheda Azienda</h2>
               <div
-                className="prose prose-invert max-w-none"
+                className="mt-2 text-white/80 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: companySeoHtml }}
               />
-            </section>
+            </div>
 
             {/* Servizi offerti */}
-            {servicesOffered.length > 0 && (
-              <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
-                <h2 className="text-lg font-semibold mb-4">Servizi offerti</h2>
-                <div className="flex flex-wrap gap-2">
-                  {servicesOffered.map((s) => (
-                    <span
-                      key={s}
-                      className="px-3 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-sm"
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </section>
-            )}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h3 className="text-lg font-semibold">Servizi offerti</h3>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {servicesOffered.map((chip) => (
+                  <span key={chip} className="rounded-full border border-white/15 bg-black/20 px-3 py-1 text-sm">
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </div>
 
             {/* Info rapide */}
-            {infoRapide.length > 0 && (
-              <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
-                <h2 className="text-lg font-semibold mb-4">Info rapide</h2>
-                <ul className="grid sm:grid-cols-2 gap-3">
-                  {infoRapide.map((i) => (
-                    <li
-                      key={i.label}
-                      className="text-sm flex justify-between border-b border-neutral-800 pb-2"
-                    >
-                      <span className="text-neutral-400">{i.label}</span>
-                      <span className="text-neutral-200">{i.value}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+              <h3 className="text-lg font-semibold">Info rapide</h3>
+              <div className="mt-3 grid sm:grid-cols-3 gap-3 text-sm">
+                {infoRapide.map((it) => (
+                  <div key={it.label} className="rounded-xl bg-black/20 p-3 border border-white/10">
+                    <div className="opacity-60">{it.label}</div>
+                    <div className="mt-1 font-medium">{it.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* SEO in fondo */}
+            {seoBottomHtml ? (
+              <div
+                className="rounded-2xl border border-white/10 bg-white/5 p-6 prose prose-invert max-w-none"
+                dangerouslySetInnerHTML={{ __html: seoBottomHtml }}
+              />
+            ) : null}
           </div>
 
-          {/* Aside */}
-          <aside className="space-y-6">
-            {/* Zone vicine */}
-            {nearby.length > 0 && (
-              <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
-                <h3 className="text-lg font-semibold mb-3">Zone vicine</h3>
-                <div className="flex flex-wrap gap-2">
-                  {nearby.map((z) => (
-                    <Link
-                      key={z.href}
-                      href={z.href}
-                      className="px-3 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-sm hover:bg-neutral-700"
-                    >
-                      {z.label}
-                    </Link>
+          {/* Colonna destra */}
+          <div className="space-y-6">
+            {faqs && faqs.length > 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                <h3 className="text-lg font-semibold mb-3">FAQ</h3>
+                <div className="divide-y divide-white/10">
+                  {faqs.map(({ q, a }, i) => (
+                    <details key={q + i} className="py-3">
+                      <summary className="cursor-pointer select-none text-white/90">{q}</summary>
+                      <p className="mt-1 text-white/70 text-sm">{a}</p>
+                    </details>
                   ))}
                 </div>
-              </section>
-            )}
+              </div>
+            ) : null}
 
-            {/* Placeholder FAQ nel side */}
-            <section className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-2">
-              <h3 className="text-lg font-semibold px-4 py-3">FAQ</h3>
-              <div />
-            </section>
-          </aside>
+            {/* Mappa reale della zona */}
+            <MapBox address={`${districtLabel}, ${cityLabel}, Italia`} />
+          </div>
         </div>
-
-        {/* ========== TRUST STRIP ========== */}
-        <div className="mt-8 rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4 flex flex-wrap items-center gap-4 text-sm">
-          <div>📞 Numero Verde <span className="font-semibold">{numeroVerde}</span></div>
-          <div>— Prezzo trasparente</div>
-          <div>— Carte di pagamento</div>
-        </div>
-
-        {/* ========== SEO BOTTOM (NUOVO) ========== */}
-        {seoBottomHtml && (
-          <section id="seo-locale" className="prose prose-invert max-w-4xl mx-auto mt-10">
-            <div dangerouslySetInnerHTML={{ __html: seoBottomHtml }} />
-          </section>
-        )}
-
-        {/* ========== FAQ IN FONDO (NUOVO) ========== */}
-        {Array.isArray(faqs) && faqs.length > 0 && (
-          <section className="mx-auto max-w-6xl px-4 py-8">
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-6">
-              <h2 className="text-lg font-semibold mb-4 text-neutral-100">Domande frequenti</h2>
-              <ul className="space-y-4">
-                {faqs.map((f, i) => (
-                  <li key={i}>
-                    <p className="font-medium text-neutral-200">{f.q}</p>
-                    <p className="text-neutral-300">{f.a}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
-
-/* =========================
-   UTILS
-   ========================= */
-function slug(s: string) {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "");
-}
-
